@@ -356,6 +356,27 @@ namespace Rock.Web.UI.Controls
         }
 
         /// <summary>
+        /// Gets or sets a value indicating whether [show gender].
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [show gender]; otherwise, <c>false</c>.
+        /// </value>
+        public bool ShowGender
+        {
+            get
+            {
+                EnsureChildControls();
+                return _rblPersonGender.Visible;
+            }
+
+            set
+            {
+                EnsureChildControls();
+                _rblPersonGender.Visible = value;
+            }
+        }
+
+        /// <summary>
         /// Gets or sets the first name.
         /// </summary>
         /// <value>

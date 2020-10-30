@@ -78,9 +78,6 @@ namespace Rock.Client
         public Rock.Client.Enums.WorkflowActionFormPersonEntryOption PersonEntryAddressEntryOption { get; set; }
 
         /// <summary />
-        public int? PersonEntryAddressTypeValueId { get; set; }
-
-        /// <summary />
         public bool PersonEntryAutofillCurrentPerson { get; set; } = true;
 
         /// <summary />
@@ -97,6 +94,9 @@ namespace Rock.Client
 
         /// <summary />
         public Guid? PersonEntryFamilyAttributeGuid { get; set; }
+
+        /// <summary />
+        public int? PersonEntryGroupLocationTypeValueId { get; set; }
 
         /// <summary />
         public bool PersonEntryHideIfCurrentPersonKnown { get; set; } = true;
@@ -176,13 +176,13 @@ namespace Rock.Client
             this.NotificationSystemEmailId = source.NotificationSystemEmailId;
             #pragma warning restore 612, 618
             this.PersonEntryAddressEntryOption = source.PersonEntryAddressEntryOption;
-            this.PersonEntryAddressTypeValueId = source.PersonEntryAddressTypeValueId;
             this.PersonEntryAutofillCurrentPerson = source.PersonEntryAutofillCurrentPerson;
             this.PersonEntryBirthdateEntryOption = source.PersonEntryBirthdateEntryOption;
             this.PersonEntryCampusIsVisible = source.PersonEntryCampusIsVisible;
             this.PersonEntryConnectionStatusValueId = source.PersonEntryConnectionStatusValueId;
             this.PersonEntryEmailEntryOption = source.PersonEntryEmailEntryOption;
             this.PersonEntryFamilyAttributeGuid = source.PersonEntryFamilyAttributeGuid;
+            this.PersonEntryGroupLocationTypeValueId = source.PersonEntryGroupLocationTypeValueId;
             this.PersonEntryHideIfCurrentPersonKnown = source.PersonEntryHideIfCurrentPersonKnown;
             this.PersonEntryMaritalStatusEntryOption = source.PersonEntryMaritalStatusEntryOption;
             this.PersonEntryMobilePhoneEntryOption = source.PersonEntryMobilePhoneEntryOption;
@@ -212,10 +212,10 @@ namespace Rock.Client
         public ICollection<WorkflowActionFormAttribute> FormAttributes { get; set; }
 
         /// <summary />
-        public DefinedValue PersonEntryAddressTypeValue { get; set; }
+        public DefinedValue PersonEntryConnectionStatusValue { get; set; }
 
         /// <summary />
-        public DefinedValue PersonEntryConnectionStatusValue { get; set; }
+        public DefinedValue PersonEntryGroupLocationTypeValue { get; set; }
 
         /// <summary />
         public DefinedValue PersonEntryRecordStatusValue { get; set; }

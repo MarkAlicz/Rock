@@ -38,7 +38,7 @@ namespace Rock.Web.Cache
         private readonly object _obj = new object();
 
         /// <summary>
-        /// Gets or sets the notification communication email identifier.
+        /// Gets the notification communication email identifier.
         /// </summary>
         /// <value>
         /// The notification system communication identifier.
@@ -48,7 +48,7 @@ namespace Rock.Web.Cache
 
 
         /// <summary>
-        /// Gets or sets the notification system email identifier.
+        /// Gets the notification system email identifier.
         /// </summary>
         /// <value>
         /// The notification system email identifier.
@@ -59,7 +59,7 @@ namespace Rock.Web.Cache
         public int? NotificationSystemEmailId { get; private set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether [include actions in notification].
+        /// Gets a value indicating whether [include actions in notification].
         /// </summary>
         /// <value>
         /// <c>true</c> if [include actions in notification]; otherwise, <c>false</c>.
@@ -68,7 +68,7 @@ namespace Rock.Web.Cache
         public bool IncludeActionsInNotification { get; private set; }
 
         /// <summary>
-        /// Gets or sets the header.
+        /// Gets the header.
         /// </summary>
         /// <value>
         /// The header.
@@ -77,7 +77,7 @@ namespace Rock.Web.Cache
         public string Header { get; private set; }
 
         /// <summary>
-        /// Gets or sets the footer.
+        /// Gets the footer.
         /// </summary>
         /// <value>
         /// The footer.
@@ -86,7 +86,7 @@ namespace Rock.Web.Cache
         public string Footer { get; private set; }
 
         /// <summary>
-        /// Gets or sets the delimited list of action buttons and actions.
+        /// Gets the delimited list of action buttons and actions.
         /// </summary>
         /// <value>
         /// The actions.
@@ -104,7 +104,7 @@ namespace Rock.Web.Cache
         public Guid? ActionAttributeGuid { get; private set; }
 
         /// <summary>
-        /// Gets or sets whether Notes can be entered
+        /// Gets whether Notes can be entered
         /// </summary>
         /// <value>
         /// The allow notes.
@@ -115,7 +115,7 @@ namespace Rock.Web.Cache
         #region Person entry related Entity Properties
 
         /// <summary>
-        /// Gets or sets a value indicating whether a new person (and spouse) can be added
+        /// Gets a value indicating whether a new person (and spouse) can be added
         /// </summary>
         /// <value>
         ///   <c>true</c> if [allow person entry]; otherwise, <c>false</c>.
@@ -124,7 +124,7 @@ namespace Rock.Web.Cache
         public bool AllowPersonEntry { get; private set; }
 
         /// <summary>
-        /// Gets or sets the person entry preHTML.
+        /// Gets the person entry preHTML.
         /// </summary>
         /// <value>
         /// The person entry preHTML.
@@ -133,7 +133,7 @@ namespace Rock.Web.Cache
         public string PersonEntryPreHtml { get; private set; }
 
         /// <summary>
-        /// Gets or sets the person entry post HTML.
+        /// Gets the person entry post HTML.
         /// </summary>
         /// <value>
         /// The person entry post HTML.
@@ -142,7 +142,7 @@ namespace Rock.Web.Cache
         public string PersonEntryPostHtml { get; private set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether [person entry show campus].
+        /// Gets a value indicating whether [person entry show campus].
         /// </summary>
         /// <value>
         ///   <c>true</c> if [person entry show campus]; otherwise, <c>false</c>.
@@ -151,7 +151,7 @@ namespace Rock.Web.Cache
         public bool PersonEntryCampusIsVisible { get; private set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether Person Entry should auto-fill with the CurrentPerson
+        /// Gets a value indicating whether Person Entry should auto-fill with the CurrentPerson
         /// </summary>
         /// <value>
         ///   <c>true</c> if [person entry auto-fill current person]; otherwise, <c>false</c>.
@@ -160,7 +160,7 @@ namespace Rock.Web.Cache
         public bool PersonEntryAutofillCurrentPerson { get; private set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether Person Entry should be hidden if the CurrentPerson is known
+        /// Gets a value indicating whether Person Entry should be hidden if the CurrentPerson is known
         /// </summary>
         /// <value>
         ///   <c>true</c> if [person entry hide if current person known]; otherwise, <c>false</c>.
@@ -169,70 +169,70 @@ namespace Rock.Web.Cache
         public bool PersonEntryHideIfCurrentPersonKnown { get; private set; }
 
         /// <summary>
-        /// Gets or sets the person entry spouse entry option.
+        /// Gets the person entry spouse entry option.
         /// </summary>
         /// <value>
         /// The person entry spouse entry option.
         /// </value>
         [DataMember]
-        public WorkflowActionFormPersonEntryOption PersonEntrySpouseEntryOption { get; private set; } = WorkflowActionFormPersonEntryOption.Hidden;
+        public WorkflowActionFormPersonEntryOption PersonEntrySpouseEntryOption { get; private set; }
 
         /// <summary>
-        /// Gets or sets the person entry email entry option.
+        /// Gets the person entry email entry option.
         /// </summary>
         /// <value>
         /// The person entry email entry option.
         /// </value>
         [DataMember]
-        public WorkflowActionFormPersonEntryOption PersonEntryEmailEntryOption { get; private set; } = WorkflowActionFormPersonEntryOption.Required;
+        public WorkflowActionFormPersonEntryOption PersonEntryEmailEntryOption { get; private set; }
 
         /// <summary>
-        /// Gets or sets the person entry mobile phone entry option.
+        /// Gets the person entry mobile phone entry option.
         /// </summary>
         /// <value>
         /// The person entry mobile phone entry option.
         /// </value>
         [DataMember]
-        public WorkflowActionFormPersonEntryOption PersonEntryMobilePhoneEntryOption { get; private set; } = WorkflowActionFormPersonEntryOption.Hidden;
+        public WorkflowActionFormPersonEntryOption PersonEntryMobilePhoneEntryOption { get; private set; }
 
         /// <summary>
-        /// Gets or sets the person entry birthdate entry option.
+        /// Gets the person entry birthdate entry option.
         /// </summary>
         /// <value>
         /// The person entry birthdate entry option.
         /// </value>
         [DataMember]
-        public WorkflowActionFormPersonEntryOption PersonEntryBirthdateEntryOption { get; private set; } = WorkflowActionFormPersonEntryOption.Hidden;
+        public WorkflowActionFormPersonEntryOption PersonEntryBirthdateEntryOption { get; private set; }
 
         /// <summary>
-        /// Gets or sets the person entry address entry option.
+        /// Gets the person entry address entry option.
         /// </summary>
         /// <value>
         /// The person entry address entry option.
         /// </value>
         [DataMember]
-        public WorkflowActionFormPersonEntryOption PersonEntryAddressEntryOption { get; private set; } = WorkflowActionFormPersonEntryOption.Hidden;
+        public WorkflowActionFormPersonEntryOption PersonEntryAddressEntryOption { get; private set; }
 
         /// <summary>
-        /// Gets or sets the person entry marital status entry option.
+        /// Gets the person entry marital status entry option.
         /// </summary>
         /// <value>
         /// The person entry marital entry option.
         /// </value>
         [DataMember]
-        public WorkflowActionFormPersonEntryOption PersonEntryMaritalStatusEntryOption { get; private set; } = WorkflowActionFormPersonEntryOption.Hidden;
+        public WorkflowActionFormPersonEntryOption PersonEntryMaritalStatusEntryOption { get; private set; }
 
         /// <summary>
-        /// Gets or sets the person entry spouse label.
+        /// Gets the person entry spouse label.
         /// </summary>
         /// <value>
         /// The person entry spouse label.
         /// </value>
         [DataMember]
-        public string PersonEntrySpouseLabel { get; private set; } = "Spouse";
+        public string PersonEntrySpouseLabel { get; private set; }
 
         /// <summary>
-        /// Gets or sets the person entry connection status value identifier.
+        /// Gets the person entry connection status value identifier.
         /// </summary>
         /// <value>
         /// The person entry connection status value identifier.
@@ -241,7 +241,7 @@ namespace Rock.Web.Cache
         public int? PersonEntryConnectionStatusValueId { get; private set; }
 
         /// <summary>
-        /// Gets or sets the person entry record status value identifier.
+        /// Gets the person entry record status value identifier.
         /// </summary>
         /// <value>
         /// The person entry record status value identifier.
@@ -250,16 +250,16 @@ namespace Rock.Web.Cache
         public int? PersonEntryRecordStatusValueId { get; private set; }
 
         /// <summary>
-        /// Gets or sets the person entry address type value identifier.
+        /// Gets the person entry address type value identifier (aka Group Location Type). Home Address, Work Address, etc.
         /// </summary>
         /// <value>
         /// The person entry address type value identifier.
         /// </value>
         [DataMember]
-        public int? PersonEntryAddressTypeValueId { get; private set; }
+        public int? PersonEntryGroupLocationTypeValueId { get; private set; }
 
         /// <summary>
-        /// Gets or sets the person entry person attribute identifier.
+        /// Gets the person entry person attribute identifier.
         /// </summary>
         /// <value>
         /// The person entry person attribute identifier.
@@ -268,7 +268,7 @@ namespace Rock.Web.Cache
         public int? PersonEntryPersonAttributeId { get; private set; }
 
         /// <summary>
-        /// Gets or sets the person entry spouse attribute identifier.
+        /// Gets the person entry spouse attribute identifier.
         /// </summary>
         /// <value>
         /// The person entry spouse attribute identifier.
@@ -277,7 +277,7 @@ namespace Rock.Web.Cache
         public int? PersonEntrySpouseAttributeId { get; private set; }
 
         /// <summary>
-        /// Gets or sets the person entry family attribute identifier.
+        /// Gets the person entry family attribute identifier.
         /// </summary>
         /// <value>
         /// The person entry family attribute identifier.
@@ -285,13 +285,40 @@ namespace Rock.Web.Cache
         [DataMember]
         public int? PersonEntryFamilyAttributeId { get; private set; }
 
+        /// <summary>
+        /// Gets the person entry family attribute unique identifier. (The one used to set the Added/Edited Person's Family to)
+        /// </summary>
+        /// <value>
+        /// The person entry family attribute unique identifier.
+        /// </value>
+        [DataMember]
+        public Guid? PersonEntryFamilyAttributeGuid { get; private set; }
+
+        /// <summary>
+        /// Gets the person entry person workflow attribute unique identifier. (The one used to set the Added/Edited Person to)
+        /// </summary>
+        /// <value>
+        /// The person entry person attribute unique identifier.
+        /// </value>
+        [DataMember]
+        public Guid? PersonEntryPersonAttributeGuid { get; private set; }
+
+        /// <summary>
+        /// Gets the person entry spouse workflow attribute unique identifier.  (The one used to set the Added/Edited Person's Spouse to)
+        /// </summary>
+        /// <value>
+        /// The person entry spouse attribute unique identifier.
+        /// </value>
+        [DataMember]
+        public Guid? PersonEntrySpouseAttributeGuid { get; private set; }
+
         #endregion Person entry related Entity Properties
 
         /// <summary>
-        /// Gets the defined values.
+        /// Gets the form attributes.
         /// </summary>
         /// <value>
-        /// The defined values.
+        /// The form attributes.
         /// </value>
         public List<WorkflowActionFormAttributeCache> FormAttributes
         {
@@ -317,7 +344,8 @@ namespace Rock.Web.Cache
                     }
                 }
 
-                if ( _formAttributeIds == null ) return formAttributes;
+                if ( _formAttributeIds == null )
+                    return formAttributes;
 
                 foreach ( var id in _formAttributeIds )
                 {
@@ -354,21 +382,52 @@ namespace Rock.Web.Cache
             base.SetFromEntity( entity );
 
             var workflowActionForm = entity as WorkflowActionForm;
-            if ( workflowActionForm == null ) return;
+            if ( workflowActionForm == null )
+                return;
 
-            NotificationSystemCommunicationId = workflowActionForm.NotificationSystemCommunicationId;
+            this.Id = workflowActionForm.Id;
+            this.ActionAttributeGuid = workflowActionForm.ActionAttributeGuid;
+            this.Actions = workflowActionForm.Actions;
+            this.AllowNotes = workflowActionForm.AllowNotes;
+            this.AllowPersonEntry = workflowActionForm.AllowPersonEntry;
+            this.Footer = workflowActionForm.Footer;
+            this.ForeignGuid = workflowActionForm.ForeignGuid;
+            this.ForeignKey = workflowActionForm.ForeignKey;
+            this.Header = workflowActionForm.Header;
+            this.IncludeActionsInNotification = workflowActionForm.IncludeActionsInNotification;
+            this.NotificationSystemCommunicationId = workflowActionForm.NotificationSystemCommunicationId;
+#pragma warning disable 612, 618
+            this.NotificationSystemEmailId = workflowActionForm.NotificationSystemEmailId;
+#pragma warning restore 612, 618
+            this.PersonEntryAddressEntryOption = workflowActionForm.PersonEntryAddressEntryOption;
+            this.PersonEntryGroupLocationTypeValueId = workflowActionForm.PersonEntryGroupLocationTypeValueId;
+            this.PersonEntryAutofillCurrentPerson = workflowActionForm.PersonEntryAutofillCurrentPerson;
+            this.PersonEntryBirthdateEntryOption = workflowActionForm.PersonEntryBirthdateEntryOption;
+            this.PersonEntryCampusIsVisible = workflowActionForm.PersonEntryCampusIsVisible;
+            this.PersonEntryConnectionStatusValueId = workflowActionForm.PersonEntryConnectionStatusValueId;
+            this.PersonEntryEmailEntryOption = workflowActionForm.PersonEntryEmailEntryOption;
+            this.PersonEntryFamilyAttributeGuid = workflowActionForm.PersonEntryFamilyAttributeGuid;
+            this.PersonEntryHideIfCurrentPersonKnown = workflowActionForm.PersonEntryHideIfCurrentPersonKnown;
+            this.PersonEntryMaritalStatusEntryOption = workflowActionForm.PersonEntryMaritalStatusEntryOption;
+            this.PersonEntryMobilePhoneEntryOption = workflowActionForm.PersonEntryMobilePhoneEntryOption;
+            this.PersonEntryPersonAttributeGuid = workflowActionForm.PersonEntryPersonAttributeGuid;
+            this.PersonEntryPostHtml = workflowActionForm.PersonEntryPostHtml;
+            this.PersonEntryPreHtml = workflowActionForm.PersonEntryPreHtml;
+            this.PersonEntryRecordStatusValueId = workflowActionForm.PersonEntryRecordStatusValueId;
+            this.PersonEntrySpouseAttributeGuid = workflowActionForm.PersonEntrySpouseAttributeGuid;
+            this.PersonEntrySpouseEntryOption = workflowActionForm.PersonEntrySpouseEntryOption;
+            this.PersonEntrySpouseLabel = workflowActionForm.PersonEntrySpouseLabel;
+            this.Guid = workflowActionForm.Guid;
+            this.ForeignId = workflowActionForm.ForeignId;
 
-#pragma warning disable CS0618 // Type or member is obsolete
-            NotificationSystemEmailId = workflowActionForm.NotificationSystemEmailId;
-#pragma warning disable CS0618 // Type or member is obsolete
 
-            IncludeActionsInNotification = workflowActionForm.IncludeActionsInNotification;
-            Header = workflowActionForm.Header;
-            Footer = workflowActionForm.Footer;
-            Actions = workflowActionForm.Actions;
-            ActionAttributeGuid = workflowActionForm.ActionAttributeGuid;
-            AllowNotes = workflowActionForm.AllowNotes;
-            AllowPersonEntry = workflowActionForm.AllowPersonEntry;
+
+
+
+
+
+
+
 
             // set formAttributeIds to null so it load them all at once on demand
             _formAttributeIds = null;

@@ -264,7 +264,7 @@ namespace Rock.Model
         /// </value>
         [DataMember]
         [DefinedValue( Rock.SystemGuid.DefinedType.GROUP_LOCATION_TYPE )]
-        public int? PersonEntryAddressTypeValueId { get; set; }
+        public int? PersonEntryGroupLocationTypeValueId { get; set; }
 
         /// <summary>
         /// Gets or sets the person entry person workflow attribute unique identifier. (The one used to set the Added/Edited Person to)
@@ -357,7 +357,7 @@ namespace Rock.Model
         /// The person entry address type value identifier.
         /// </value>
         [DataMember]
-        public virtual DefinedValue PersonEntryAddressTypeValue { get; set; }
+        public virtual DefinedValue PersonEntryGroupLocationTypeValue { get; set; }
 
         #endregion Virtual Properties
 
@@ -530,7 +530,7 @@ namespace Rock.Model
 
             this.HasOptional( f => f.PersonEntryConnectionStatusValue ).WithMany().HasForeignKey( f => f.PersonEntryConnectionStatusValueId ).WillCascadeOnDelete( false );
             this.HasOptional( f => f.PersonEntryRecordStatusValue ).WithMany().HasForeignKey( f => f.PersonEntryRecordStatusValueId ).WillCascadeOnDelete( false );
-            this.HasOptional( f => f.PersonEntryAddressTypeValue ).WithMany().HasForeignKey( f => f.PersonEntryAddressTypeValueId ).WillCascadeOnDelete( false );
+            this.HasOptional( f => f.PersonEntryGroupLocationTypeValue ).WithMany().HasForeignKey( f => f.PersonEntryGroupLocationTypeValueId ).WillCascadeOnDelete( false );
         }
     }
 

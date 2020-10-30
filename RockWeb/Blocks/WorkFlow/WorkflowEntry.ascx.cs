@@ -581,6 +581,10 @@ namespace RockWeb.Blocks.WorkFlow
             }
         }
 
+        /// <summary>
+        /// Builds the form.
+        /// </summary>
+        /// <param name="setValues">if set to <c>true</c> [set values].</param>
         private void BuildForm( bool setValues )
         {
             var mergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields( this.RockPage, this.CurrentPerson );
@@ -592,8 +596,8 @@ namespace RockWeb.Blocks.WorkFlow
 
             if ( setValues )
             {
-                lheadingText.Text = form.Header.ResolveMergeFields( mergeFields );
-                lFootingText.Text = form.Footer.ResolveMergeFields( mergeFields );
+                lFormHeaderText.Text = form.Header.ResolveMergeFields( mergeFields );
+                lFormFooterText.Text = form.Footer.ResolveMergeFields( mergeFields );
             }
 
             if ( _workflow != null && _workflow.CreatedDateTime.HasValue )
@@ -604,6 +608,12 @@ namespace RockWeb.Blocks.WorkFlow
             {
                 hlblDateAdded.Visible = false;
             }
+
+            if ( form.AllowPersonEntry )
+            {
+                BuildPersonEntryForm( form, setValues );
+            }
+
 
             phAttributes.Controls.Clear();
 
@@ -736,6 +746,119 @@ namespace RockWeb.Blocks.WorkFlow
             }
         }
 
+        /// <summary>
+        /// Builds the person entry form.
+        /// </summary>
+        /// <param name="form">The form.</param>
+        /// <param name="setValues">if set to <c>true</c> [set values].</param>
+        private void BuildPersonEntryForm( WorkflowActionFormCache form, bool setValues )
+        {
+            pnlPersonEntry.Visible = form.AllowPersonEntry;
+            if ( !form.AllowPersonEntry )
+            {
+                return;
+            }
+
+            if ( form.PersonEntryHideIfCurrentPersonKnown && CurrentPerson != null )
+            {
+                pnlPersonEntry.Visible = false;
+                return;
+            }
+
+            lPersonEntryPreHtml.Text = form.PersonEntryPreHtml;
+
+            // NOTE: If there is only one Campus in the system, this control be always be hidden
+            cpPersonEntryCampus.Visible = form.PersonEntryCampusIsVisible;
+
+            SetPersonEditorOptions( pePerson1, form );
+            SetPersonEditorOptions( pePerson2, form );
+            pePerson2.PersonLabelPrefix = form.PersonEntrySpouseLabel;
+            if ( form.PersonEntrySpouseEntryOption == WorkflowActionFormPersonEntryOption.Required )
+            {
+                // if Spouse is required, don't show the option to show/hide spouse
+                cbShowPerson2.Checked = true;
+                cbShowPerson2.Visible = false;
+            }
+
+            cbShowPerson2.Visible = form.PersonEntrySpouseEntryOption == WorkflowActionFormPersonEntryOption.Enabled;
+
+            if ( setValues )
+            {
+                pePerson2.Visible = form.PersonEntrySpouseEntryOption != WorkflowActionFormPersonEntryOption.Hidden && cbShowPerson2.Checked;
+            }
+
+            // TODO pePerson2.Required = form.PersonEntrySpouseEntryOption == WorkflowActionFormPersonEntryOption.Required;
+
+            dvpMaritalStatus.Required = form.PersonEntryMaritalStatusEntryOption == WorkflowActionFormPersonEntryOption.Required;
+            dvpMaritalStatus.Visible = form.PersonEntryMaritalStatusEntryOption != WorkflowActionFormPersonEntryOption.Hidden;
+
+            lPersonEntryPostHtml.Text = form.PersonEntryPostHtml;
+
+            if ( form.PersonEntryAutofillCurrentPerson && setValues && CurrentPerson != null )
+            {
+                cpPersonEntryCampus.SetValue( CurrentPerson.PrimaryCampusId );
+                pePerson1.SetFromPerson( CurrentPerson );
+                var spouse = CurrentPerson.GetSpouse();
+                if ( pePerson2.Visible )
+                {
+                    pePerson2.SetFromPerson( spouse );
+                }
+
+                var primaryFamily = CurrentPerson.PrimaryFamily;
+                if ( primaryFamily != null )
+                {
+                    var familyLocation = primaryFamily.GroupLocations.Where( a => a.GroupLocationTypeValueId == form.PersonEntryGroupLocationTypeValueId ).FirstOrDefault();
+                    if ( familyLocation != null )
+                    {
+                        acPersonEntry.SetValues( familyLocation.Location );
+                    }
+                    else
+                    {
+                        acPersonEntry.SetValues( null );
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Sets the person editor options.
+        /// </summary>
+        /// <param name="personBasicEditor">The person basic editor.</param>
+        /// <param name="form">The form.</param>
+        private static void SetPersonEditorOptions( PersonBasicEditor personBasicEditor, WorkflowActionFormCache form )
+        {
+            personBasicEditor.ShowInColumns = false;
+            personBasicEditor.ShowTitle = false;
+            personBasicEditor.ShowSuffix = false;
+
+            // Connection Status is determined by form.PersonEntryConnectionStatusValueId
+            personBasicEditor.ShowConnectionStatus = false;
+
+            // Role will always be Adult
+            personBasicEditor.ShowPersonRole = false;
+            personBasicEditor.ShowGrade = false;
+
+            personBasicEditor.RequireEmail = form.PersonEntryEmailEntryOption == WorkflowActionFormPersonEntryOption.Required;
+            personBasicEditor.ShowEmail = form.PersonEntryEmailEntryOption != WorkflowActionFormPersonEntryOption.Hidden;
+
+            personBasicEditor.RequireMobilePhone = form.PersonEntryMobilePhoneEntryOption == WorkflowActionFormPersonEntryOption.Required;
+            personBasicEditor.ShowMobilePhone = form.PersonEntryMobilePhoneEntryOption != WorkflowActionFormPersonEntryOption.Hidden;
+
+            personBasicEditor.RequireBirthdate = form.PersonEntryBirthdateEntryOption == WorkflowActionFormPersonEntryOption.Required;
+            personBasicEditor.ShowBirthdate = form.PersonEntryBirthdateEntryOption != WorkflowActionFormPersonEntryOption.Hidden;
+
+            // workflow doesn't have a setting for requiring/showing gender
+            personBasicEditor.RequireGender = true;
+            personBasicEditor.ShowGender = true;
+
+            // we have a another MaritalStatus picker that will apply to both Person and Person's Spouse
+            personBasicEditor.ShowMaritalStatus = false;
+        }
+
+        /// <summary>
+        /// Shows the notes.
+        /// </summary>
+        /// <param name="visible">if set to <c>true</c> [visible].</param>
         private void ShowNotes( bool visible )
         {
             divNotes.Visible = visible;
@@ -1027,5 +1150,10 @@ namespace RockWeb.Blocks.WorkFlow
         }
 
         #endregion
+
+        protected void cbShowPerson2_CheckedChanged( object sender, EventArgs e )
+        {
+
+        }
     }
 }

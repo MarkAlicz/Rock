@@ -41,6 +41,11 @@ namespace Rock.Web.UI.Controls
         private WorkflowFormActionList _falActions;
         private RockDropDownList _ddlActionAttribute;
 
+        private static class ViewStateKey
+        {
+            public const string ValidationGroup = "ValidationGroup";
+        }
+
         #region PersonEntry related
 
         private RockCheckBox _cbAllowPersonEntry;
@@ -60,7 +65,7 @@ namespace Rock.Web.UI.Controls
         private RockTextBox _tbPersonEntrySpouseLabel;
         private DefinedValuePicker _dvpPersonEntryConnectionStatus;
         private DefinedValuePicker _dvpPersonEntryRecordStatus;
-        private DefinedValuePicker _dvpPersonEntryAddressType;
+        private DefinedValuePicker _dvpPersonEntryGroupLocationType;
         private RockDropDownList _ddlPersonEntryPersonAttribute;
         private RockDropDownList _ddlPersonEntrySpouseAttribute;
         private RockDropDownList _ddlPersonEntryFamilyAttribute;
@@ -84,12 +89,12 @@ namespace Rock.Web.UI.Controls
         {
             get
             {
-                return ViewState["ValidationGroup"] as string;
+                return ViewState[ViewStateKey.ValidationGroup] as string;
             }
 
             set
             {
-                ViewState["ValidationGroup"] = value;
+                ViewState[ViewStateKey.ValidationGroup] = value;
             }
         }
 
@@ -136,7 +141,7 @@ namespace Rock.Web.UI.Controls
             form.PersonEntrySpouseLabel = _tbPersonEntrySpouseLabel.Text;
             form.PersonEntryConnectionStatusValueId = _dvpPersonEntryConnectionStatus.SelectedDefinedValueId;
             form.PersonEntryRecordStatusValueId = _dvpPersonEntryRecordStatus.SelectedDefinedValueId;
-            form.PersonEntryAddressTypeValueId = _dvpPersonEntryAddressType.SelectedDefinedValueId;
+            form.PersonEntryGroupLocationTypeValueId = _dvpPersonEntryGroupLocationType.SelectedDefinedValueId;
 
             form.PersonEntryPersonAttributeGuid = _ddlPersonEntryPersonAttribute.SelectedValueAsGuid();
             form.PersonEntrySpouseAttributeGuid = _ddlPersonEntrySpouseAttribute.SelectedValueAsGuid();
@@ -211,7 +216,7 @@ namespace Rock.Web.UI.Controls
             _tbPersonEntrySpouseLabel.Text = workflowActionForm.PersonEntrySpouseLabel;
             _dvpPersonEntryConnectionStatus.SetValue( workflowActionForm.PersonEntryConnectionStatusValueId );
             _dvpPersonEntryRecordStatus.SetValue( workflowActionForm.PersonEntryRecordStatusValueId );
-            _dvpPersonEntryAddressType.SetValue( workflowActionForm.PersonEntryAddressTypeValueId );
+            _dvpPersonEntryGroupLocationType.SetValue( workflowActionForm.PersonEntryGroupLocationTypeValueId );
 
             _ddlPersonEntryPersonAttribute.Items.Clear();
             _ddlPersonEntryPersonAttribute.Items.Add( new ListItem() );
@@ -305,7 +310,7 @@ namespace Rock.Web.UI.Controls
             target.PersonEntrySpouseLabel = source.PersonEntrySpouseLabel;
             target.PersonEntryConnectionStatusValueId = source.PersonEntryConnectionStatusValueId;
             target.PersonEntryRecordStatusValueId = source.PersonEntryRecordStatusValueId;
-            target.PersonEntryAddressTypeValueId = source.PersonEntryAddressTypeValueId;
+            target.PersonEntryGroupLocationTypeValueId = source.PersonEntryGroupLocationTypeValueId;
             target.PersonEntryPersonAttributeGuid = source.PersonEntryPersonAttributeGuid;
             target.PersonEntrySpouseAttributeGuid = source.PersonEntrySpouseAttributeGuid;
             target.PersonEntryFamilyAttributeGuid = source.PersonEntryFamilyAttributeGuid;
@@ -584,9 +589,9 @@ namespace Rock.Web.UI.Controls
                 DefinedTypeId = DefinedTypeCache.GetId( Rock.SystemGuid.DefinedType.PERSON_RECORD_STATUS.AsGuid() )
             };
 
-            _dvpPersonEntryAddressType = new DefinedValuePicker
+            _dvpPersonEntryGroupLocationType = new DefinedValuePicker
             {
-                ID = "_dvpPersonEntryAddressType",
+                ID = "_dvpPersonEntryGroupLocationType",
                 Label = "Address Type",
                 DefinedTypeId = DefinedTypeCache.GetId( Rock.SystemGuid.DefinedType.GROUP_LOCATION_TYPE.AsGuid() )
             };
@@ -785,7 +790,7 @@ namespace Rock.Web.UI.Controls
             pnlPersonEntryRow4.Controls.Add( pnlPersonEntryRow4Col3 );
             pnlPersonEntryRow4.Controls.Add( pnlPersonEntryRow4Col4 );
 
-            pnlPersonEntryRow4Col1.Controls.Add( _dvpPersonEntryAddressType );
+            pnlPersonEntryRow4Col1.Controls.Add( _dvpPersonEntryGroupLocationType );
 
             /* Person Entry - Row 5*/
             Panel pnlPersonEntryRow5 = new Panel

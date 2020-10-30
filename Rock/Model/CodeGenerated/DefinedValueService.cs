@@ -316,13 +316,13 @@ namespace Rock.Model
                 return false;
             }  
  
-            if ( new Service<WorkflowActionForm>( Context ).Queryable().Any( a => a.PersonEntryAddressTypeValueId == item.Id ) )
+            if ( new Service<WorkflowActionForm>( Context ).Queryable().Any( a => a.PersonEntryConnectionStatusValueId == item.Id ) )
             {
                 errorMessage = string.Format( "This {0} is assigned to a {1}.", DefinedValue.FriendlyTypeName, WorkflowActionForm.FriendlyTypeName );
                 return false;
             }  
  
-            if ( new Service<WorkflowActionForm>( Context ).Queryable().Any( a => a.PersonEntryConnectionStatusValueId == item.Id ) )
+            if ( new Service<WorkflowActionForm>( Context ).Queryable().Any( a => a.PersonEntryGroupLocationTypeValueId == item.Id ) )
             {
                 errorMessage = string.Format( "This {0} is assigned to a {1}.", DefinedValue.FriendlyTypeName, WorkflowActionForm.FriendlyTypeName );
                 return false;

@@ -108,13 +108,13 @@ namespace Rock.Model
             target.NotificationSystemEmailId = source.NotificationSystemEmailId;
             #pragma warning restore 612, 618
             target.PersonEntryAddressEntryOption = source.PersonEntryAddressEntryOption;
-            target.PersonEntryAddressTypeValueId = source.PersonEntryAddressTypeValueId;
             target.PersonEntryAutofillCurrentPerson = source.PersonEntryAutofillCurrentPerson;
             target.PersonEntryBirthdateEntryOption = source.PersonEntryBirthdateEntryOption;
             target.PersonEntryCampusIsVisible = source.PersonEntryCampusIsVisible;
             target.PersonEntryConnectionStatusValueId = source.PersonEntryConnectionStatusValueId;
             target.PersonEntryEmailEntryOption = source.PersonEntryEmailEntryOption;
             target.PersonEntryFamilyAttributeGuid = source.PersonEntryFamilyAttributeGuid;
+            target.PersonEntryGroupLocationTypeValueId = source.PersonEntryGroupLocationTypeValueId;
             target.PersonEntryHideIfCurrentPersonKnown = source.PersonEntryHideIfCurrentPersonKnown;
             target.PersonEntryMaritalStatusEntryOption = source.PersonEntryMaritalStatusEntryOption;
             target.PersonEntryMobilePhoneEntryOption = source.PersonEntryMobilePhoneEntryOption;

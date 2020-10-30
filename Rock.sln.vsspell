@@ -37,6 +37,8 @@
     <Ignore>readonly</Ignore>
     <Ignore>texting</Ignore>
     <Ignore>workflow</Ignore>
+    <Ignore>geocoding</Ignore>
+    <Ignore>geocoded</Ignore>
   </IgnoredWords>
   <IgnoredFilePatterns>
     <FilePattern>*.Designer.cs</FilePattern>
@@ -48,7 +50,7 @@
     <Expression Match="col-.*-\d*" />
     <Expression Match="fa fa-.*" />
     <Expression Match="input-width-.*" />
-    <Expression Match="table table-.*" />
     <Expression Match="Pre-Html" Options="IgnoreCase" />
+    <Expression Match="table table-.*" />
   </ExclusionExpressions>
 </SpellCheckerConfiguration>
