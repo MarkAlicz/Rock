@@ -121,15 +121,27 @@ namespace Rock.Bus.Consumer
             foreach ( var queue in queues )
             {
                 var consumerTypes = consumersByQueue[queue];
-                var queueName = queue.NameForConfiguration;
 
-                configurator.ReceiveEndpoint( queueName, e =>
+                if ( queue is IPublishEventQueue )
                 {
-                    foreach ( var consumerType in consumerTypes )
+                    configurator.ReceiveEndpoint( e =>
                     {
-                        e.Consumer( consumerType, ConsumerFactory );
-                    }
-                } );
+                        foreach ( var consumerType in consumerTypes )
+                        {
+                            e.Consumer( consumerType, ConsumerFactory );
+                        }
+                    } );
+                }
+                else
+                {
+                    configurator.ReceiveEndpoint( queue.Name, e =>
+                    {
+                        foreach ( var consumerType in consumerTypes )
+                        {
+                            e.Consumer( consumerType, ConsumerFactory );
+                        }
+                    } );
+                }
             }
         }
 
