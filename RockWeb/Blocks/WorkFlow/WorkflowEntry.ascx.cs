@@ -120,6 +120,9 @@ namespace RockWeb.Blocks.WorkFlow
         private static class ViewStateKey
         {
             public const string WorkflowTypeId = "WorkflowTypeId";
+            public const string ActionTypeId = "ActionTypeId";
+            public const string WorkflowId = "WorkflowId";
+            public const string ConfiguredType = "ConfiguredType";
         }
 
         #region Fields
@@ -157,8 +160,8 @@ namespace RockWeb.Blocks.WorkFlow
         /// </value>
         public bool ConfiguredType
         {
-            get { return ViewState["ConfiguredType"] as bool? ?? false; }
-            set { ViewState["ConfiguredType"] = value; }
+            get { return ViewState[ViewStateKey.ConfiguredType] as bool? ?? false; }
+            set { ViewState[ViewStateKey.ConfiguredType] = value; }
         }
 
         /// <summary>
@@ -169,8 +172,8 @@ namespace RockWeb.Blocks.WorkFlow
         /// </value>
         public int? WorkflowId
         {
-            get { return ViewState["WorkflowId"] as int?; }
-            set { ViewState["WorkflowId"] = value; }
+            get { return ViewState[ViewStateKey.WorkflowId] as int?; }
+            set { ViewState[ViewStateKey.WorkflowId] = value; }
         }
 
         /// <summary>
@@ -181,8 +184,8 @@ namespace RockWeb.Blocks.WorkFlow
         /// </value>
         public int? ActionTypeId
         {
-            get { return ViewState["ActionTypeId"] as int?; }
-            set { ViewState["ActionTypeId"] = value; }
+            get { return ViewState[ViewStateKey.ActionTypeId] as int?; }
+            set { ViewState[ViewStateKey.ActionTypeId] = value; }
         }
 
         #endregion
@@ -261,10 +264,6 @@ namespace RockWeb.Blocks.WorkFlow
             return breadCrumbs;
         }
 
-        protected override void Render( HtmlTextWriter writer )
-        {
-            base.Render( writer );
-        }
         #endregion
 
         #region Events
@@ -287,7 +286,8 @@ namespace RockWeb.Blocks.WorkFlow
         /// <param name="eventArgument">A <see cref="T:System.String" /> that represents an optional event argument to be passed to the event handler.</param>
         public void RaisePostBackEvent( string eventArgument )
         {
-            GetFormValues();
+            GetWorkflowFormPersonEntryValues();
+            GetWorkflowFormAttributeValues();
             CompleteFormAction( eventArgument );
         }
 
@@ -530,6 +530,9 @@ namespace RockWeb.Blocks.WorkFlow
             return false;
         }
 
+        /// <summary>
+        /// Loads the WorkflowType
+        /// </summary>
         private void LoadWorkflowType()
         {
             if ( _rockContext == null )
@@ -572,6 +575,9 @@ namespace RockWeb.Blocks.WorkFlow
             }
         }
 
+        /// <summary>
+        /// Processes the action request.
+        /// </summary>
         private void ProcessActionRequest()
         {
             string action = PageParameter( PageParameterKey.Command );
@@ -582,7 +588,7 @@ namespace RockWeb.Blocks.WorkFlow
         }
 
         /// <summary>
-        /// Builds the form.
+        /// Builds the WorkflowActionForm.
         /// </summary>
         /// <param name="setValues">if set to <c>true</c> [set values].</param>
         private void BuildForm( bool setValues )
@@ -611,9 +617,8 @@ namespace RockWeb.Blocks.WorkFlow
 
             if ( form.AllowPersonEntry )
             {
-                BuildPersonEntryForm( form, setValues );
+                BuildPersonEntryForm( form, setValues, mergeFields );
             }
-
 
             phAttributes.Controls.Clear();
 
@@ -751,7 +756,8 @@ namespace RockWeb.Blocks.WorkFlow
         /// </summary>
         /// <param name="form">The form.</param>
         /// <param name="setValues">if set to <c>true</c> [set values].</param>
-        private void BuildPersonEntryForm( WorkflowActionFormCache form, bool setValues )
+        /// <param name="mergeFields">The merge fields.</param>
+        private void BuildPersonEntryForm( WorkflowActionFormCache form, bool setValues, Dictionary<string, object> mergeFields )
         {
             pnlPersonEntry.Visible = form.AllowPersonEntry;
             if ( !form.AllowPersonEntry )
@@ -765,7 +771,7 @@ namespace RockWeb.Blocks.WorkFlow
                 return;
             }
 
-            lPersonEntryPreHtml.Text = form.PersonEntryPreHtml;
+            lPersonEntryPreHtml.Text = form.PersonEntryPreHtml.ResolveMergeFields( mergeFields );
 
             // NOTE: If there is only one Campus in the system, this control be always be hidden
             cpPersonEntryCampus.Visible = form.PersonEntryCampusIsVisible;
@@ -773,6 +779,7 @@ namespace RockWeb.Blocks.WorkFlow
             SetPersonEditorOptions( pePerson1, form );
             SetPersonEditorOptions( pePerson2, form );
             pePerson2.PersonLabelPrefix = form.PersonEntrySpouseLabel;
+            cbShowPerson2.Text = string.Format( "Show {0}", form.PersonEntrySpouseLabel );
             if ( form.PersonEntrySpouseEntryOption == WorkflowActionFormPersonEntryOption.Required )
             {
                 // if Spouse is required, don't show the option to show/hide spouse
@@ -787,12 +794,13 @@ namespace RockWeb.Blocks.WorkFlow
                 pePerson2.Visible = form.PersonEntrySpouseEntryOption != WorkflowActionFormPersonEntryOption.Hidden && cbShowPerson2.Checked;
             }
 
-            // TODO pePerson2.Required = form.PersonEntrySpouseEntryOption == WorkflowActionFormPersonEntryOption.Required;
-
             dvpMaritalStatus.Required = form.PersonEntryMaritalStatusEntryOption == WorkflowActionFormPersonEntryOption.Required;
             dvpMaritalStatus.Visible = form.PersonEntryMaritalStatusEntryOption != WorkflowActionFormPersonEntryOption.Hidden;
 
-            lPersonEntryPostHtml.Text = form.PersonEntryPostHtml;
+            acPersonEntryAddress.Visible = form.PersonEntryAddressEntryOption != WorkflowActionFormPersonEntryOption.Hidden;
+            acPersonEntryAddress.Required = form.PersonEntryAddressEntryOption == WorkflowActionFormPersonEntryOption.Required;
+
+            lPersonEntryPostHtml.Text = form.PersonEntryPostHtml.ResolveMergeFields( mergeFields );
 
             if ( form.PersonEntryAutofillCurrentPerson && setValues && CurrentPerson != null )
             {
@@ -810,11 +818,11 @@ namespace RockWeb.Blocks.WorkFlow
                     var familyLocation = primaryFamily.GroupLocations.Where( a => a.GroupLocationTypeValueId == form.PersonEntryGroupLocationTypeValueId ).FirstOrDefault();
                     if ( familyLocation != null )
                     {
-                        acPersonEntry.SetValues( familyLocation.Location );
+                        acPersonEntryAddress.SetValues( familyLocation.Location );
                     }
                     else
                     {
-                        acPersonEntry.SetValues( null );
+                        acPersonEntryAddress.SetValues( null );
                     }
                 }
             }
@@ -856,6 +864,16 @@ namespace RockWeb.Blocks.WorkFlow
         }
 
         /// <summary>
+        /// Handles the CheckedChanged event of the cbShowPerson2 control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        protected void cbShowPerson2_CheckedChanged( object sender, EventArgs e )
+        {
+            pePerson2.Visible = cbShowPerson2.Checked;
+        }
+
+        /// <summary>
         /// Shows the notes.
         /// </summary>
         /// <param name="visible">if set to <c>true</c> [visible].</param>
@@ -875,7 +893,202 @@ namespace RockWeb.Blocks.WorkFlow
             }
         }
 
-        private void GetFormValues()
+        /// <summary>
+        /// Gets the workflow form person entry values.
+        /// </summary>
+        private void GetWorkflowFormPersonEntryValues()
+        {
+            if ( _workflow == null || _actionType == null )
+            {
+                return;
+            }
+
+            var form = _actionType.WorkflowForm;
+
+            if ( form == null )
+            {
+                return;
+            }
+
+            pnlPersonEntry.Visible = form.AllowPersonEntry;
+            if ( !form.AllowPersonEntry )
+            {
+                return;
+            }
+
+            var rockContext = new RockContext();
+
+            if ( CurrentPersonId.HasValue && form.PersonEntryHideIfCurrentPersonKnown )
+            {
+                return;
+            }
+
+            int? existingPersonId;
+            int? existingPersonSpouseId = null;
+            if ( CurrentPersonId.HasValue && form.PersonEntryAutofillCurrentPerson )
+            {
+                existingPersonId = CurrentPersonId;
+
+                if ( pePerson2.Visible )
+                {
+                    var existingPersonSpouse = CurrentPerson.GetSpouse( rockContext );
+                    if ( existingPersonSpouse != null )
+                    {
+                        existingPersonSpouseId = existingPersonSpouse.Id;
+                    }
+                }
+            }
+            else
+            {
+                existingPersonId = null;
+            }
+
+            var attemptMatchForPerson = true;
+
+            var personService = new PersonService( rockContext );
+
+            var personEntryPerson = CreateOrUpdatePersonFromPersonEditor( existingPersonId, attemptMatchForPerson, pePerson1, rockContext );
+            if ( personEntryPerson.Id == 0 )
+            {
+                personEntryPerson.ConnectionStatusValueId = form.PersonEntryConnectionStatusValueId;
+                personEntryPerson.RecordStatusValueId = form.PersonEntryRecordStatusValueId;
+            }
+
+            // save person 1 to database and re-fetch to get any newly create family, or other things that would happen on PreSave changes, etc
+            rockContext.SaveChanges();
+            personEntryPerson = personService.GetInclude( personEntryPerson.Id, x => x.PrimaryFamily );
+
+            Person personEntryPersonSpouse;
+
+            // if the person doesn't have an existing spouse, just create a new spouse. Don't attempt to find a spouse for them.
+            // For example, if Tom Miller (Single) types in spouse information that matches Cindy Decker's information, just create a new Cindy Decker
+            if ( pePerson2.Visible )
+            {
+                var attemptMatchForSpouse = false;
+                personEntryPersonSpouse = CreateOrUpdatePersonFromPersonEditor( existingPersonSpouseId, attemptMatchForSpouse, pePerson2, rockContext );
+                if ( personEntryPersonSpouse.Id == 0 )
+                {
+                    personEntryPersonSpouse.ConnectionStatusValueId = form.PersonEntryConnectionStatusValueId;
+                    personEntryPersonSpouse.RecordStatusValueId = form.PersonEntryRecordStatusValueId;
+
+                    PersonService.AddPersonToFamily( personEntryPersonSpouse, true, personEntryPerson.PrimaryFamilyId.Value, pePerson2.PersonGroupRoleId, rockContext );
+                }
+            }
+            else
+            {
+                personEntryPersonSpouse = null;
+            }
+
+            if ( form.PersonEntryMaritalStatusEntryOption != WorkflowActionFormPersonEntryOption.Hidden )
+            {
+                personEntryPerson.MaritalStatusValueId = dvpMaritalStatus.SelectedDefinedValueId;
+                if ( personEntryPersonSpouse != null )
+                {
+                    personEntryPersonSpouse.MaritalStatusValueId = dvpMaritalStatus.SelectedDefinedValueId;
+                }
+            }
+
+            if ( cpPersonEntryCampus.Visible )
+            {
+                personEntryPerson.PrimaryFamily.CampusId = cpPersonEntryCampus.SelectedCampusId;
+            }
+
+            if ( acPersonEntryAddress.Visible && form.PersonEntryGroupLocationTypeValueId.HasValue )
+            {
+                // a Person should always have a PrimaryFamilyId, but check to make sure, just in case 
+                if ( personEntryPerson.PrimaryFamily != null )
+                {
+                    var groupLocationService = new GroupLocationService( rockContext );
+                    var familyLocation = personEntryPerson.PrimaryFamily.GroupLocations.Where( a => a.GroupLocationTypeValueId == form.PersonEntryGroupLocationTypeValueId.Value ).FirstOrDefault();
+
+                    var newOrExistingLocation = new LocationService( rockContext ).Get(
+                            acPersonEntryAddress.Street1,
+                            acPersonEntryAddress.Street2,
+                            acPersonEntryAddress.City,
+                            acPersonEntryAddress.State,
+                            acPersonEntryAddress.PostalCode,
+                            acPersonEntryAddress.Country );
+
+                    if ( newOrExistingLocation != null )
+                    {
+                        if ( familyLocation == null )
+                        {
+                            familyLocation = new GroupLocation
+                            {
+                                GroupLocationTypeValueId = form.PersonEntryGroupLocationTypeValueId.Value,
+                                GroupId = personEntryPerson.PrimaryFamilyId.Value,
+                                IsMailingLocation = true,
+                                IsMappedLocation = true
+                            };
+
+                            groupLocationService.Add( familyLocation );
+                        }
+
+                        if ( newOrExistingLocation.Id != familyLocation.LocationId )
+                        {
+                            familyLocation.LocationId = newOrExistingLocation.Id;
+                        }
+                    }
+                }
+            }
+
+            rockContext.SaveChanges();
+        }
+
+        /// <summary>
+        /// Creates or Updates person from person editor.
+        /// </summary>
+        /// <param name="existingPersonId">The existing person identifier.</param>
+        /// <param name="attemptMatch">if set to <c>true</c> [attempt match].</param>
+        /// <param name="personEditor">The person editor.</param>
+        /// <param name="rockContext">The rock context.</param>
+        /// <returns></returns>
+        private static Person CreateOrUpdatePersonFromPersonEditor( int? existingPersonId, bool attemptMatch, PersonBasicEditor personEditor, RockContext rockContext )
+        {
+            var personService = new PersonService( rockContext );
+            Person personEntryPerson = null;
+            if ( existingPersonId.HasValue )
+            {
+                // Update Person from personEditor
+                personEntryPerson = personService.Get( existingPersonId.Value );
+                personEditor.UpdatePerson( personEntryPerson, rockContext );
+                return personEntryPerson;
+            }
+
+            // note, if we are updating the existing Spouse record, don't attempt to find their spouse
+            if ( attemptMatch )
+            {
+                // Match or Create Person from personEditor
+                var personMatchQuery = new PersonService.PersonMatchQuery( personEditor.FirstName, personEditor.LastName, personEditor.Email, personEditor.MobilePhoneNumber )
+                {
+                    Gender = personEditor.PersonGender,
+                    BirthDate = personEditor.PersonBirthDate,
+                    SuffixValueId = personEditor.PersonSuffixValueId
+                };
+
+                bool updatePrimaryEmail = false;
+                personEntryPerson = personService.FindPerson( personMatchQuery, updatePrimaryEmail );
+            }
+
+            if ( personEntryPerson != null )
+            {
+                // if a match was found, update that person
+                personEditor.UpdatePerson( personEntryPerson, rockContext );
+            }
+            else
+            {
+                personEntryPerson = new Person();
+                personEditor.UpdatePerson( personEntryPerson, rockContext );
+                personService.Add( personEntryPerson );
+            }
+
+            return personEntryPerson;
+        }
+
+        /// <summary>
+        /// Gets the form values.
+        /// </summary>
+        private void GetWorkflowFormAttributeValues()
         {
             if ( _workflow == null || _actionType == null )
             {
@@ -913,6 +1126,10 @@ namespace RockWeb.Blocks.WorkFlow
             }
         }
 
+        /// <summary>
+        /// Completes the form action.
+        /// </summary>
+        /// <param name="formAction">The form action.</param>
         private void CompleteFormAction( string formAction )
         {
             if ( string.IsNullOrWhiteSpace( formAction )
@@ -1070,6 +1287,13 @@ namespace RockWeb.Blocks.WorkFlow
             }
         }
 
+        /// <summary>
+        /// Shows the message.
+        /// </summary>
+        /// <param name="type">The type.</param>
+        /// <param name="title">The title.</param>
+        /// <param name="message">The message.</param>
+        /// <param name="hideForm">if set to <c>true</c> [hide form].</param>
         private void ShowMessage( NotificationBoxType type, string title, string message, bool hideForm = true )
         {
             nbMessage.NotificationBoxType = type;
@@ -1150,10 +1374,5 @@ namespace RockWeb.Blocks.WorkFlow
         }
 
         #endregion
-
-        protected void cbShowPerson2_CheckedChanged( object sender, EventArgs e )
-        {
-
-        }
     }
 }

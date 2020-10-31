@@ -3495,7 +3495,7 @@ namespace Rock.Model
         }
 
         /// <summary>
-        /// Adds the person to family.
+        /// Adds the person to family and saves changes to the database
         /// </summary>
         /// <param name="person">The person.</param>
         /// <param name="newPerson">if set to <c>true</c> [new person].</param>

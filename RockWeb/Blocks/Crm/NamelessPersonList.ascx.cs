@@ -72,8 +72,6 @@ namespace RockWeb.Blocks.Crm
         {
             base.OnLoad( e );
 
-            newPersonEditor.ShowInColumns = !newPersonEditor.ShowInColumns;
-
             if ( !Page.IsPostBack )
             {
                 BindGrid();

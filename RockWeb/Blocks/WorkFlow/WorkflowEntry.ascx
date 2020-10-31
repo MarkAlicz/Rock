@@ -34,7 +34,7 @@
 
                                 <div class="row">
                                     <div class="col-md-6">
-                                        <Rock:CampusPicker ID="cpPersonEntryCampus" runat="server" />
+                                        <Rock:CampusPicker ID="cpPersonEntryCampus" runat="server" Required="true" />
                                     </div>
                                     <div class="col-md-6">
                                     </div>
@@ -58,7 +58,7 @@
                             <%-- Person Entry Address and Marital Status --%>
                             <asp:Panel ID="pnlPersonEntryRow2" CssClass="row" runat="server">
                                 <asp:Panel ID="pnlPersonEntryRow2Column1" runat="server" CssClass="col-md-6">
-                                    <Rock:AddressControl ID="acPersonEntry" runat="server" Label="Address" />
+                                    <Rock:AddressControl ID="acPersonEntryAddress" runat="server" Label="Address" />
                                 </asp:Panel>
                                 <asp:Panel ID="pnlPersonEntryRow2Column2" runat="server" CssClass="col-md-6">
                                     <Rock:DefinedValuePicker runat="server" ID="dvpMaritalStatus" Label="Marital Status" />
@@ -76,8 +76,6 @@
                         <div class="actions">
                             <asp:PlaceHolder ID="phActions" runat="server" />
                         </div>
-
-                        </asp:Panel>
 
                         <Rock:NotificationBox ID="nbMessage" runat="server" Dismissable="true" CssClass="margin-t-lg" />
                     </div>
