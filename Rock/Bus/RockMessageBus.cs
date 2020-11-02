@@ -18,6 +18,7 @@
 using MassTransit;
 using Rock.Bus.Consumer;
 using Rock.Bus.Message;
+using Rock.Bus.Observer;
 using Rock.Bus.Queue;
 using Rock.Bus.Transport;
 using Rock.Model;
@@ -48,37 +49,47 @@ namespace Rock.Bus
         private static TransportComponent _transportComponent = null;
 
         /// <summary>
-        /// The Rock instance unique identifier
-        /// </summary>
-        public static readonly Guid RockInstanceGuid = Guid.NewGuid();
-
-        /// <summary>
         /// Starts this bus.
         /// </summary>
-        public static async Task Start()
+        public static async Task StartAsync()
         {
             var components = TransportContainer.Instance.Components.Select( c => c.Value.Value );
-            _transportComponent = components.FirstOrDefault( c => c.IsActive ) ?? components.FirstOrDefault( c => c is InMemory );
+            var inMemoryTransport = components.FirstOrDefault( c => c is InMemory );
+            _transportComponent = components.FirstOrDefault( c => c.IsActive ) ?? inMemoryTransport;
 
-            if ( _transportComponent == null )
+            try
             {
-                throw new ConfigurationException( "An active transport component is required for Rock to run correctly" );
+                await ConfigureBusAsync();
             }
+            catch ( Exception e )
+            {
+                // Try in-memory to see if Rock can start
+                var originalTransport = _transportComponent;
+                _transportComponent = inMemoryTransport;
 
-            _bus = _transportComponent.GetBusControl( RockConsumer.ConfigureRockConsumers );
-            await _bus.StartAsync();
-            _isBusStarted = true;
+                if ( originalTransport == inMemoryTransport || _transportComponent == null )
+                {
+                    // Already tried in-memory or in-memory is not available
+                    throw;
+                }
+
+                // Start-up with in-memory
+                await ConfigureBusAsync();
+
+                // Log that the original transport did not work
+                ExceptionLogService.LogException( new ConfigurationException( $"Could not start the message bus transport: {originalTransport.GetType().Name}", e ) );
+            }
         }
 
         /// <summary>
         /// Publishes the message.
         /// </summary>
         /// <param name="message">The message.</param>
-        public static async Task Publish<TQueue, TMessage>( TMessage message )
+        public static async Task PublishAsync<TQueue, TMessage>( TMessage message )
             where TQueue : IPublishEventQueue, new()
             where TMessage : class, IEventMessage<TQueue>
         {
-            await Publish( message, typeof( TMessage ) );
+            await PublishAsync( message, typeof( TMessage ) );
         }
 
         /// <summary>
@@ -87,7 +98,7 @@ namespace Rock.Bus
         /// <typeparam name="TQueue">The type of the queue.</typeparam>
         /// <param name="message">The message.</param>
         /// <param name="messageType">Type of the message.</param>
-        public static async Task Publish<TQueue>( IEventMessage<TQueue> message, Type messageType )
+        public static async Task PublishAsync<TQueue>( IEventMessage<TQueue> message, Type messageType )
             where TQueue : IPublishEventQueue, new()
         {
             if ( !IsReady() )
@@ -106,11 +117,11 @@ namespace Rock.Bus
         /// Sends the message.
         /// </summary>
         /// <param name="message">The message.</param>
-        public static async Task Send<TQueue, TMessage>( TMessage message )
+        public static async Task SendAsync<TQueue, TMessage>( TMessage message )
             where TQueue : ISendCommandQueue, new()
             where TMessage : class, ICommandMessage<TQueue>
         {
-            await Send( message, typeof( TMessage ) );
+            await SendAsync( message, typeof( TMessage ) );
         }
 
         /// <summary>
@@ -119,7 +130,7 @@ namespace Rock.Bus
         /// <typeparam name="TQueue">The type of the queue.</typeparam>
         /// <param name="message">The message.</param>
         /// <param name="messageType">Type of the message.</param>
-        public static async Task Send<TQueue>( ICommandMessage<TQueue> message, Type messageType )
+        public static async Task SendAsync<TQueue>( ICommandMessage<TQueue> message, Type messageType )
             where TQueue : ISendCommandQueue, new()
         {
             if ( !IsReady() )
@@ -129,13 +140,30 @@ namespace Rock.Bus
             }
 
             var queue = RockQueue.Get<TQueue>();
-            var queueName = queue.NameForConfiguration;
-            var endpoint = _transportComponent.GetSendEndpoint( _bus, queueName );
+            var endpoint = _transportComponent.GetSendEndpoint( _bus, queue.Name );
 
             await endpoint.Send( message, messageType, context =>
             {
                 context.TimeToLive = RockQueue.GetTimeToLive( queue );
             } );
+        }
+
+        /// <summary>
+        /// Configures the bus.
+        /// </summary>
+        /// <returns></returns>
+        private async static Task ConfigureBusAsync()
+        {
+            if ( _transportComponent == null )
+            {
+                throw new ConfigurationException( "An active transport component is required for Rock to run correctly" );
+            }
+
+            _bus = _transportComponent.GetBusControl( RockConsumer.ConfigureRockConsumers );
+            RockObserver.ConfigureRockObservers( _bus );
+
+            await _bus.StartAsync();
+            _isBusStarted = true;
         }
 
         /// <summary>
@@ -147,6 +175,17 @@ namespace Rock.Bus
         private static bool IsReady()
         {
             return _isBusStarted && _transportComponent != null && _bus != null;
+        }
+
+        /// <summary>
+        /// Gets a completed task. This is a helper to be used for when there is a Task
+        /// return type and no task is really necessary. The task returned is immediately
+        /// resolved.
+        /// </summary>
+        /// <returns></returns>
+        internal static Task GetCompletedTask()
+        {
+            return Task.Delay( 0 );
         }
     }
 }

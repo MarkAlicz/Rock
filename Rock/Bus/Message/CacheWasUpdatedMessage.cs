@@ -79,7 +79,7 @@ namespace Rock.Bus.Message
             message.CacheName = itemType.FullName;
             message.EventType = callerMethodName;
 
-            _ = RockMessageBus.Publish( message, messageType );
+            // _ = RockMessageBus.Publish( message, messageType );
         }
     }
 }

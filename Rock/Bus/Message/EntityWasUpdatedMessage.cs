@@ -112,7 +112,7 @@ namespace Rock.Bus.Message
             message.EntityTypeId = entity.TypeId;
             message.EntityState = entityState.ToString();
 
-            _ = RockMessageBus.Publish( message, messageType );
+            _ = RockMessageBus.PublishAsync( message, messageType );
         }
 
         /// <summary>

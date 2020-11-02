@@ -31,15 +31,5 @@ namespace Rock.Bus.Queue
     /// </summary>
     public abstract class PublishEventQueue : RockQueue, IPublishEventQueue
     {
-        /// <summary>
-        /// Gets the name for configuration. On a publish queue we want the name to be specific to the Rock
-        /// instance. This is so that each Rock instance receives all the events published on this queue.
-        /// If the queue names are the same, then MassTransit assumes only one Rock instance needs to
-        /// receive the messages.
-        /// </summary>
-        /// <value>
-        /// The name for configuration.
-        /// </value>
-        public override string NameForConfiguration => $"{Name}_{RockMessageBus.RockInstanceGuid}";
     }
 }

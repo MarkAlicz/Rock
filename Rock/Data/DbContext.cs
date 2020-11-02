@@ -392,7 +392,7 @@ namespace Rock.Data
                 // TODO: DEBUG ONLY - remove this
                 if ( item.Entity.TypeId == EntityTypeCache.Get<DefinedType>().Id )
                 {
-                    _ = RockMessageBus.Send<StartTaskQueue, StartTaskMessage>( new StartTaskMessage
+                    _ = RockMessageBus.SendAsync<StartTaskQueue, StartTaskMessage>( new StartTaskMessage
                     {
                         Data = $"DefinedType: {( item.Entity as DefinedType ).Name}"
                     } );

@@ -197,8 +197,7 @@ namespace RockWeb
                 ExceptionLogService.AlwaysLogToFile = false;
 
                 // Start the Rock Message Bus
-                var task = RockMessageBus.Start();
-                task.Wait();
+                RockMessageBus.StartAsync().Wait();
             }
             catch ( Exception ex )
             {

@@ -79,7 +79,7 @@ namespace Rock.Bus.Consumer
         {
             ConsumeContext = context;
             Consume( context.Message );
-            return Task.Delay( 0 );
+            return RockMessageBus.GetCompletedTask();
         }
 
         /// <summary>
