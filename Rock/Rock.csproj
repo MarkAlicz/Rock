@@ -548,10 +548,6 @@
     <Compile Include="Bus\Message\StartTaskMessage.cs" />
     <Compile Include="Bus\Message\RockMessage.cs" />
     <Compile Include="Bus\Message\EntityWasUpdatedMessage.cs" />
-    <Compile Include="Bus\Observer\MessageEnvelope.cs" />
-    <Compile Include="Bus\Observer\RockDebugObserver.cs" />
-    <Compile Include="Bus\Observer\RockObserver.cs" />
-    <Compile Include="Bus\Observer\RockObserverRouter.cs" />
     <Compile Include="Bus\Queue\CacheEventQueue.cs" />
     <Compile Include="Bus\Queue\PublishEventQueue.cs" />
     <Compile Include="Bus\Queue\SendCommandQueue.cs" />

@@ -18,7 +18,6 @@
 using MassTransit;
 using Rock.Bus.Consumer;
 using Rock.Bus.Message;
-using Rock.Bus.Observer;
 using Rock.Bus.Queue;
 using Rock.Bus.Transport;
 using Rock.Model;
@@ -165,7 +164,6 @@ namespace Rock.Bus
             }
 
             _bus = _transportComponent.GetBusControl( RockConsumer.ConfigureRockConsumers );
-            // RockObserver.ConfigureRockObservers( _bus );
 
             await _bus.StartAsync();
             _isBusStarted = true;
