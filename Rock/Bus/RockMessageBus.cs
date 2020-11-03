@@ -49,6 +49,11 @@ namespace Rock.Bus
         private static TransportComponent _transportComponent = null;
 
         /// <summary>
+        /// The Rock instance unique identifier
+        /// </summary>
+        public static readonly Guid RockInstanceGuid = Guid.NewGuid();
+
+        /// <summary>
         /// Starts this bus.
         /// </summary>
         public static async Task StartAsync()
@@ -140,7 +145,7 @@ namespace Rock.Bus
             }
 
             var queue = RockQueue.Get<TQueue>();
-            var endpoint = _transportComponent.GetSendEndpoint( _bus, queue.Name );
+            var endpoint = _transportComponent.GetSendEndpoint( _bus, queue.NameForConfiguration );
 
             await endpoint.Send( message, messageType, context =>
             {
@@ -160,7 +165,7 @@ namespace Rock.Bus
             }
 
             _bus = _transportComponent.GetBusControl( RockConsumer.ConfigureRockConsumers );
-            RockObserver.ConfigureRockObservers( _bus );
+            // RockObserver.ConfigureRockObservers( _bus );
 
             await _bus.StartAsync();
             _isBusStarted = true;

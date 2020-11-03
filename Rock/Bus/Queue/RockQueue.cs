@@ -34,6 +34,14 @@ namespace Rock.Bus.Queue
         string Name { get; }
 
         /// <summary>
+        /// Gets the name for configuration.
+        /// </summary>
+        /// <value>
+        /// The name for configuration.
+        /// </value>
+        string NameForConfiguration { get; }
+
+        /// <summary>
         /// Gets the time to live seconds.
         /// A setting of null or less than 1 means there is no expiration.
         /// </summary>
@@ -55,6 +63,14 @@ namespace Rock.Bus.Queue
         /// The name.
         /// </value>
         public virtual string Name => GetType().Name;
+
+        /// <summary>
+        /// Gets the name for configuration.
+        /// </summary>
+        /// <value>
+        /// The name for configuration.
+        /// </value>
+        public virtual string NameForConfiguration => Name;
 
         /// <summary>
         /// Gets the time to live seconds.

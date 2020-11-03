@@ -19,7 +19,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using MassTransit;
 using Rock.Bus.Message;
 using Rock.Bus.Queue;
@@ -51,8 +50,9 @@ namespace Rock.Bus.Observer
         /// Observes the specified message.
         /// </summary>
         /// <param name="receiveContext">The receive context.</param>
+        /// <param name="messageEnvelope">The message envelope.</param>
         /// <param name="message">The message.</param>
-        void Observe( ReceiveContext receiveContext, TMessage message );
+        void Observe( ReceiveContext receiveContext, MessageEnvelope messageEnvelope, TMessage message );
     }
 
     /// <summary>
