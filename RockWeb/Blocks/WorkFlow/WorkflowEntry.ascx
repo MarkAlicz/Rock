@@ -39,43 +39,47 @@
                                     <div class="col-md-6">
                                     </div>
                                 </div>
+
+
+                                <asp:Panel ID="pnlPersonEntryRow1" runat="server" CssClass="row">
+                                    <%-- Person 1 --%>
+                                    <asp:Panel ID="pnlPersonEntryRow1Column1" runat="server" CssClass="col-md-6">
+                                        <Rock:PersonBasicEditor ID="pePerson1" runat="server" />
+                                    </asp:Panel>
+
+                                    <%-- Person 2 (Spouse) --%>
+                                    <asp:Panel ID="pnlPersonEntryRow1Column2" runat="server" CssClass="col-md-6">
+                                        <Rock:PersonBasicEditor ID="pePerson2" runat="server" />
+                                    </asp:Panel>
+                                </asp:Panel>
+
+                                <Rock:RockCheckBox ID="cbShowPerson2" runat="server" Text="Show Person2" Checked="true" AutoPostBack="true" OnCheckedChanged="cbShowPerson2_CheckedChanged" />
+
+                                <%-- Person Entry Address and Marital Status --%>
+                                <asp:Panel ID="pnlPersonEntryRow2" CssClass="row" runat="server">
+                                    <asp:Panel ID="pnlPersonEntryRow2Column1" runat="server" CssClass="col-md-6">
+                                        <Rock:AddressControl ID="acPersonEntryAddress" runat="server" Label="Address" />
+                                    </asp:Panel>
+                                    <asp:Panel ID="pnlPersonEntryRow2Column2" runat="server" CssClass="col-md-6">
+                                        <Rock:DefinedValuePicker runat="server" ID="dvpMaritalStatus" Label="Marital Status" />
+                                    </asp:Panel>
+                                </asp:Panel>
+
+                                <asp:Literal ID="lPersonEntryPostHtml" runat="server" />
                             </asp:Panel>
 
-                            <asp:Panel ID="pnlPersonEntryRow1" runat="server" CssClass="row">
-                                <%-- Person 1 --%>
-                                <asp:Panel ID="pnlPersonEntryRow1Column1" runat="server" CssClass="col-md-6">
-                                    <Rock:PersonBasicEditor ID="pePerson1" runat="server" />
-                                </asp:Panel>
 
-                                <%-- Person 2 (Spouse) --%>
-                                <asp:Panel ID="pnlPersonEntryRow1Column2" runat="server" CssClass="col-md-6">
-                                    <Rock:PersonBasicEditor ID="pePerson2" runat="server" />
-                                </asp:Panel>
-                            </asp:Panel>
+                            <%-- Workflow Attribute Controls  --%>
+                            <asp:PlaceHolder ID="phAttributes" runat="server" />
 
-                            <Rock:RockCheckBox ID="cbShowPerson2" runat="server" Text="Show Person2" Checked="true" AutoPostBack="true" OnCheckedChanged="cbShowPerson2_CheckedChanged" />
+                            <asp:Literal ID="lFormFooterText" runat="server" />
 
-                            <%-- Person Entry Address and Marital Status --%>
-                            <asp:Panel ID="pnlPersonEntryRow2" CssClass="row" runat="server">
-                                <asp:Panel ID="pnlPersonEntryRow2Column1" runat="server" CssClass="col-md-6">
-                                    <Rock:AddressControl ID="acPersonEntryAddress" runat="server" Label="Address" />
-                                </asp:Panel>
-                                <asp:Panel ID="pnlPersonEntryRow2Column2" runat="server" CssClass="col-md-6">
-                                    <Rock:DefinedValuePicker runat="server" ID="dvpMaritalStatus" Label="Marital Status" />
-                                </asp:Panel>
-                            </asp:Panel>
+                            <div class="actions">
+                                <asp:PlaceHolder ID="phActions" runat="server" />
+                            </div>
 
-                            <asp:Literal ID="lPersonEntryPostHtml" runat="server" />
+                            
                         </asp:Panel>
-
-                        <%-- Workflow Attribute Controls  --%>
-                        <asp:PlaceHolder ID="phAttributes" runat="server" />
-
-                        <asp:Literal ID="lFormFooterText" runat="server" />
-
-                        <div class="actions">
-                            <asp:PlaceHolder ID="phActions" runat="server" />
-                        </div>
 
                         <Rock:NotificationBox ID="nbMessage" runat="server" Dismissable="true" CssClass="margin-t-lg" />
                     </div>

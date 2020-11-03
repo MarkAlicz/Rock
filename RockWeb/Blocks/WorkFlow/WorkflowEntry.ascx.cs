@@ -940,61 +940,62 @@ namespace RockWeb.Blocks.WorkFlow
 
             var attemptMatchForPerson = true;
 
-            var personService = new PersonService( rockContext );
-
             var personEntryPerson = CreateOrUpdatePersonFromPersonEditor( existingPersonId, attemptMatchForPerson, pePerson1, rockContext );
             if ( personEntryPerson.Id == 0 )
             {
                 personEntryPerson.ConnectionStatusValueId = form.PersonEntryConnectionStatusValueId;
                 personEntryPerson.RecordStatusValueId = form.PersonEntryRecordStatusValueId;
+                PersonService.SaveNewPerson( personEntryPerson, rockContext, cpPersonEntryCampus.SelectedCampusId );
+            }
+
+            if ( form.PersonEntryMaritalStatusEntryOption != WorkflowActionFormPersonEntryOption.Hidden )
+            {
+                personEntryPerson.MaritalStatusValueId = dvpMaritalStatus.SelectedDefinedValueId;
             }
 
             // save person 1 to database and re-fetch to get any newly create family, or other things that would happen on PreSave changes, etc
             rockContext.SaveChanges();
-            personEntryPerson = personService.GetInclude( personEntryPerson.Id, x => x.PrimaryFamily );
 
-            Person personEntryPersonSpouse;
+            int personEntryPersonId = personEntryPerson.Id;
+            var personService = new PersonService( rockContext );
+            var primaryFamily = personService.GetSelect( personEntryPersonId, s => s.PrimaryFamily );
 
             // if the person doesn't have an existing spouse, just create a new spouse. Don't attempt to find a spouse for them.
             // For example, if Tom Miller (Single) types in spouse information that matches Cindy Decker's information, just create a new Cindy Decker
             if ( pePerson2.Visible )
             {
                 var attemptMatchForSpouse = false;
-                personEntryPersonSpouse = CreateOrUpdatePersonFromPersonEditor( existingPersonSpouseId, attemptMatchForSpouse, pePerson2, rockContext );
+                var personEntryPersonSpouse = CreateOrUpdatePersonFromPersonEditor( existingPersonSpouseId, attemptMatchForSpouse, pePerson2, rockContext );
                 if ( personEntryPersonSpouse.Id == 0 )
                 {
                     personEntryPersonSpouse.ConnectionStatusValueId = form.PersonEntryConnectionStatusValueId;
                     personEntryPersonSpouse.RecordStatusValueId = form.PersonEntryRecordStatusValueId;
 
-                    PersonService.AddPersonToFamily( personEntryPersonSpouse, true, personEntryPerson.PrimaryFamilyId.Value, pePerson2.PersonGroupRoleId, rockContext );
+                    PersonService.AddPersonToFamily( personEntryPersonSpouse, true, primaryFamily.Id, pePerson2.PersonGroupRoleId, rockContext );
                 }
-            }
-            else
-            {
-                personEntryPersonSpouse = null;
-            }
 
-            if ( form.PersonEntryMaritalStatusEntryOption != WorkflowActionFormPersonEntryOption.Hidden )
-            {
-                personEntryPerson.MaritalStatusValueId = dvpMaritalStatus.SelectedDefinedValueId;
-                if ( personEntryPersonSpouse != null )
+
+                if ( form.PersonEntryMaritalStatusEntryOption != WorkflowActionFormPersonEntryOption.Hidden )
                 {
                     personEntryPersonSpouse.MaritalStatusValueId = dvpMaritalStatus.SelectedDefinedValueId;
                 }
+
+                rockContext.SaveChanges();
             }
+
 
             if ( cpPersonEntryCampus.Visible )
             {
-                personEntryPerson.PrimaryFamily.CampusId = cpPersonEntryCampus.SelectedCampusId;
+                primaryFamily.CampusId = cpPersonEntryCampus.SelectedCampusId;
             }
 
             if ( acPersonEntryAddress.Visible && form.PersonEntryGroupLocationTypeValueId.HasValue )
             {
                 // a Person should always have a PrimaryFamilyId, but check to make sure, just in case 
-                if ( personEntryPerson.PrimaryFamily != null )
+                if ( primaryFamily != null )
                 {
                     var groupLocationService = new GroupLocationService( rockContext );
-                    var familyLocation = personEntryPerson.PrimaryFamily.GroupLocations.Where( a => a.GroupLocationTypeValueId == form.PersonEntryGroupLocationTypeValueId.Value ).FirstOrDefault();
+                    var familyLocation = primaryFamily.GroupLocations.Where( a => a.GroupLocationTypeValueId == form.PersonEntryGroupLocationTypeValueId.Value ).FirstOrDefault();
 
                     var newOrExistingLocation = new LocationService( rockContext ).Get(
                             acPersonEntryAddress.Street1,
@@ -1011,7 +1012,7 @@ namespace RockWeb.Blocks.WorkFlow
                             familyLocation = new GroupLocation
                             {
                                 GroupLocationTypeValueId = form.PersonEntryGroupLocationTypeValueId.Value,
-                                GroupId = personEntryPerson.PrimaryFamilyId.Value,
+                                GroupId = primaryFamily.Id,
                                 IsMailingLocation = true,
                                 IsMappedLocation = true
                             };
@@ -1074,7 +1075,6 @@ namespace RockWeb.Blocks.WorkFlow
             {
                 personEntryPerson = new Person();
                 personEditor.UpdatePerson( personEntryPerson, rockContext );
-                personService.Add( personEntryPerson );
             }
 
             return personEntryPerson;
@@ -1219,71 +1219,76 @@ namespace RockWeb.Blocks.WorkFlow
             var workflowService = new WorkflowService( rockContext );
 
             List<string> errorMessages;
-            if ( workflowService.Process( _workflow, out errorMessages ) )
-            {
-                Guid? previousActionGuid = null;
 
-                if ( _action != null )
-                {
-                    // Compare GUIDs since the IDs are DB generated and will be 0 if the workflow is not persisted.
-                    previousActionGuid = _action.Guid;
-                }
-
-                ActionTypeId = null;
-                _action = null;
-                _actionType = null;
-                _activity = null;
-                bool hydrateObjectsResult = HydrateObjects();
-
-                if ( hydrateObjectsResult && _action != null && _action.Guid != previousActionGuid )
-                {
-                    // The block reloads the page with the workflow IDs as a parameter. At this point the workflow must be persisted regardless of user settings in order for the workflow to work.
-                    workflowService.PersistImmediately( _action );
-
-                    // If we are already being directed (presumably from the Redirect Action), don't redirect again.
-                    if ( !Response.IsRequestBeingRedirected )
-                    {
-                        var pageReference = new PageReference( CurrentPageReference );
-                        bool allowPassingWorkflowId = !this.GetAttributeValue( AttributeKey.DisablePassingWorkflowId ).AsBoolean();
-                        if ( allowPassingWorkflowId )
-                        {
-                            pageReference.Parameters.AddOrReplace( PageParameterKey.WorkflowId, _workflow.Id.ToString() );
-                        }
-
-                        pageReference.Parameters.AddOrReplace( PageParameterKey.WorkflowGuid, _workflow.Guid.ToString() );
-
-                        foreach ( var key in pageReference.QueryString.AllKeys.Where( k => !k.Equals( PageParameterKey.Command, StringComparison.OrdinalIgnoreCase ) ) )
-                        {
-                            pageReference.Parameters.AddOrIgnore( key, pageReference.QueryString[key] );
-                        }
-
-                        pageReference.QueryString = new System.Collections.Specialized.NameValueCollection();
-                        Response.Redirect( pageReference.BuildUrl(), false );
-                        Context.ApplicationInstance.CompleteRequest();
-                    }
-                }
-                else
-                {
-                    if ( lSummary.Text.IsNullOrWhiteSpace() )
-                    {
-                        var hideForm = _action == null || _action.Guid != previousActionGuid;
-                        ShowMessage( NotificationBoxType.Success, string.Empty, responseText, hideForm );
-                    }
-                    else
-                    {
-                        pnlForm.Visible = false;
-                    }
-                }
-
-                ShowMessage(
-                    NotificationBoxType.Danger,
-                    "Workflow Processing Error(s):",
-                    "<ul><li>" + errorMessages.AsDelimited( "</li><li>", null, true ) + "</li></ul>" );
-            }
+            var workflowProcessSuccess = workflowService.Process( _workflow, out errorMessages );
 
             if ( _workflow.Id != 0 )
             {
                 WorkflowId = _workflow.Id;
+            }
+
+            if ( !workflowProcessSuccess )
+            {
+                ShowMessage(
+                    NotificationBoxType.Danger,
+                    "Workflow Processing Error(s):",
+                    "<ul><li>" + errorMessages.AsDelimited( "</li><li>", null, true ) + "</li></ul>" );
+                return;
+            }
+
+
+            Guid? previousActionGuid = null;
+
+            if ( _action != null )
+            {
+                // Compare GUIDs since the IDs are DB generated and will be 0 if the workflow is not persisted.
+                previousActionGuid = _action.Guid;
+            }
+
+            ActionTypeId = null;
+            _action = null;
+            _actionType = null;
+            _activity = null;
+            bool hydrateObjectsResult = HydrateObjects();
+
+            if ( hydrateObjectsResult && _action != null && _action.Guid != previousActionGuid )
+            {
+                // The block reloads the page with the workflow IDs as a parameter. At this point the workflow must be persisted regardless of user settings in order for the workflow to work.
+                workflowService.PersistImmediately( _action );
+
+                // If we are already being directed (presumably from the Redirect Action), don't redirect again.
+                if ( !Response.IsRequestBeingRedirected )
+                {
+                    var pageReference = new PageReference( CurrentPageReference );
+                    bool allowPassingWorkflowId = !this.GetAttributeValue( AttributeKey.DisablePassingWorkflowId ).AsBoolean();
+                    if ( allowPassingWorkflowId )
+                    {
+                        pageReference.Parameters.AddOrReplace( PageParameterKey.WorkflowId, _workflow.Id.ToString() );
+                    }
+
+                    pageReference.Parameters.AddOrReplace( PageParameterKey.WorkflowGuid, _workflow.Guid.ToString() );
+
+                    foreach ( var key in pageReference.QueryString.AllKeys.Where( k => !k.Equals( PageParameterKey.Command, StringComparison.OrdinalIgnoreCase ) ) )
+                    {
+                        pageReference.Parameters.AddOrIgnore( key, pageReference.QueryString[key] );
+                    }
+
+                    pageReference.QueryString = new System.Collections.Specialized.NameValueCollection();
+                    Response.Redirect( pageReference.BuildUrl(), false );
+                    Context.ApplicationInstance.CompleteRequest();
+                }
+            }
+            else
+            {
+                if ( lSummary.Text.IsNullOrWhiteSpace() )
+                {
+                    var hideForm = _action == null || _action.Guid != previousActionGuid;
+                    ShowMessage( NotificationBoxType.Success, string.Empty, responseText, hideForm );
+                }
+                else
+                {
+                    pnlForm.Visible = false;
+                }
             }
         }
 

@@ -3401,7 +3401,7 @@ namespace Rock.Model
 
         /// <summary>
         /// Adds a person alias, known relationship group, implied relationship group, and family for a new person.
-        /// Returns the new Family(Group) that was created for the person.
+        /// Returns the new Family(Group) that was created for the person. The Person and Family are saved to the database.
         /// </summary>
         /// <param name="person">The person.</param>
         /// <param name="rockContext">The rock context.</param>

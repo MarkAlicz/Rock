@@ -383,7 +383,9 @@ namespace Rock.Web.Cache
 
             var workflowActionForm = entity as WorkflowActionForm;
             if ( workflowActionForm == null )
+            {
                 return;
+            }
 
             this.Id = workflowActionForm.Id;
             this.ActionAttributeGuid = workflowActionForm.ActionAttributeGuid;
@@ -419,15 +421,6 @@ namespace Rock.Web.Cache
             this.PersonEntrySpouseLabel = workflowActionForm.PersonEntrySpouseLabel;
             this.Guid = workflowActionForm.Guid;
             this.ForeignId = workflowActionForm.ForeignId;
-
-
-
-
-
-
-
-
-
 
             // set formAttributeIds to null so it load them all at once on demand
             _formAttributeIds = null;
