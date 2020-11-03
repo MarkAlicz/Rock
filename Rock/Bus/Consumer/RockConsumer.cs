@@ -31,7 +31,7 @@ namespace Rock.Bus.Consumer
     public interface IRockConsumer
     {
         /// <summary>
-        /// Gets the instance.
+        /// The instance of this consumer that will be used to consume the messages.
         /// </summary>
         /// <value>
         /// The instance.
@@ -92,7 +92,7 @@ namespace Rock.Bus.Consumer
         }
 
         /// <summary>
-        /// Gets the instance.
+        /// The instance of this consumer that will be used to consume the messages.
         /// </summary>
         /// <value>
         /// The instance.
