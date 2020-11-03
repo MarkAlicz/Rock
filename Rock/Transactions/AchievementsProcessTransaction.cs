@@ -15,8 +15,11 @@
 // </copyright>
 //
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using Rock.Bus.Message;
+using Rock.Bus.Queue;
 using Rock.Data;
 using Rock.Web.Cache;
 
@@ -25,43 +28,83 @@ namespace Rock.Transactions
     /// <summary>
     /// Transaction to process achievements for updated source entities
     /// </summary>
-    /// <seealso cref="Rock.Transactions.ITransaction" />
-    public class AchievementsProcessingTransaction : ITransaction
+    public class AchievementsProcessingTransaction : BusStartedTransaction<AchievementsProcessingTransaction.Message>
     {
-        /// <summary>
-        /// The entities that need to be processed
-        /// </summary>
-        private IEnumerable<IEntity> SourceEntities { get; }
+        #region Instance Properties
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="AchievementAttemptChangeTransaction"/> class.
+        /// Gets or sets the source entities.
         /// </summary>
-        /// <param name="sourceEntities">The source entities.</param>
-        public AchievementsProcessingTransaction( IEnumerable<IEntity> sourceEntities )
-        {
-            if ( sourceEntities == null || !sourceEntities.Any() )
-            {
-                return;
-            }
+        /// <value>
+        /// The source entities.
+        /// </value>
+        public IEnumerable<IEntity> SourceEntities { get; set; }
 
-            SourceEntities = sourceEntities;
-        }
+        #endregion Instance Properties
+
+        #region Abstract Implementation
 
         /// <summary>
         /// Executes this instance.
         /// </summary>
-        /// <exception cref="System.NotImplementedException"></exception>
-        public void Execute()
+        public override void Execute( Message message )
         {
-            if ( SourceEntities == null || !SourceEntities.Any() )
+            if ( message == null )
             {
                 return;
             }
 
-            foreach ( var sourceEntity in SourceEntities )
+            var rockContext = new RockContext();
+            var entity = Reflection.GetIEntityForEntityType( message.EntityTypeId, message.EntityGuid, rockContext );
+
+            if ( entity == null )
             {
-                AchievementTypeCache.ProcessAchievements( sourceEntity );
+                return;
             }
+
+            AchievementTypeCache.ProcessAchievements( entity );
         }
+
+        /// <summary>
+        /// Generate messages from the instance properties.
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public override IEnumerable<Message> GetMessagesToSend()
+        {
+            return SourceEntities?.Select( e => new Message
+            {
+                EntityGuid = e.Guid,
+                EntityTypeId = e.TypeId
+            } );
+        }
+
+        #endregion Abstract Implementation
+
+        #region Helper Classes
+
+        /// <summary>
+        /// Message Class
+        /// </summary>
+        public sealed class Message : ICommandMessage<StartTaskQueue>
+        {
+            /// <summary>
+            /// Gets or sets the entity type identifier.
+            /// </summary>
+            /// <value>
+            /// The entity type identifier.
+            /// </value>
+            public int EntityTypeId { get; set; }
+
+            /// <summary>
+            /// Gets or sets the entity guid.
+            /// </summary>
+            /// <value>
+            /// The entity identifier.
+            /// </value>
+            public Guid EntityGuid { get; set; }
+        }
+
+        #endregion Helper Classes
     }
 }

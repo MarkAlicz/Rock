@@ -18,8 +18,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
-
+using System.Threading.Tasks;
+using MassTransit;
 using Newtonsoft.Json;
+using Rock.Bus.Consumer;
+using Rock.Bus.Message;
+using Rock.Bus.Queue;
 
 namespace Rock.Web.Cache
 {
@@ -139,6 +143,7 @@ namespace Rock.Web.Cache
                 UpdateCacheItem( key, value, keyFactory );
             }
 
+            CacheWasUpdatedMessage<T>.Publish();
             return value;
         }
 
@@ -201,6 +206,8 @@ namespace Rock.Web.Cache
                 allKeys.Add( key, true );
                 RockCacheManager<List<string>>.Instance.AddOrUpdate( AllKey, _AllRegion, allKeys );
             }
+
+            CacheWasUpdatedMessage<T>.Publish();
         }
 
         /// <summary>
@@ -216,6 +223,7 @@ namespace Rock.Web.Cache
                 return value;
             }
 
+            CacheWasUpdatedMessage<T>.Publish();
             return keyFactory == null ? new List<string>() : AddKeys( keyFactory );
         }
 
@@ -231,6 +239,7 @@ namespace Rock.Web.Cache
                 RockCacheManager<List<string>>.Instance.AddOrUpdate( AllKey, _AllRegion, allKeys );
             }
 
+            CacheWasUpdatedMessage<T>.Publish();
             return allKeys;
         }
 
@@ -295,6 +304,8 @@ namespace Rock.Web.Cache
             var qualifiedKey = QualifiedKey( key );
 
             RockCacheManager<T>.Instance.Cache.Remove( qualifiedKey );
+
+            CacheWasUpdatedMessage<T>.Publish();
         }
 
         /// <summary>
@@ -326,6 +337,8 @@ namespace Rock.Web.Cache
                 allIds.Remove( key );
                 RockCacheManager<List<string>>.Instance.AddOrUpdate( AllKey, _AllRegion, allIds );
             }
+
+            CacheWasUpdatedMessage<T>.Publish();
         }
 
         /// <summary>
@@ -345,6 +358,8 @@ namespace Rock.Web.Cache
             }
             
             RockCacheManager<List<string>>.Instance.Cache.Remove( AllKey, _AllRegion );
+
+            CacheWasUpdatedMessage<T>.Publish();
         }
 
 

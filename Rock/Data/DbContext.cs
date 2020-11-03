@@ -25,6 +25,9 @@ using System.Reflection;
 using System.Threading.Tasks;
 using System.Web;
 using DotLiquid;
+using Rock.Bus;
+using Rock.Bus.Message;
+using Rock.Bus.Queue;
 using Rock.Model;
 using Rock.Transactions;
 using Rock.UniversalSearch;
@@ -409,6 +412,19 @@ namespace Rock.Data
             List<ITransaction> indexTransactions = new List<ITransaction>();
             foreach ( var item in updatedItems )
             {
+                // Publish on the message bus if configured
+                EntityWasUpdatedMessage.PublishIfShould( item.Entity, item.PreSaveState );
+
+                // TODO: DEBUG ONLY - remove this
+                if ( item.Entity.TypeId == EntityTypeCache.Get<DefinedType>().Id )
+                {
+                    _ = RockMessageBus.SendAsync<StartTaskQueue, StartTaskMessage>( new StartTaskMessage
+                    {
+                        Data = $"DefinedType: {( item.Entity as DefinedType ).Name}"
+                    } );
+                }
+                // END TODO: DEBUG ONLY - remove this
+
                 if ( item.State == EntityState.Detached || item.State == EntityState.Deleted )
                 {
                     TriggerWorkflows( item, WorkflowTriggerType.PostDelete, personAlias );
@@ -465,7 +481,7 @@ namespace Rock.Data
                     var indexingEnabled = IndexContainer.GetActiveComponent() == null ? false : true;
                     if ( indexingEnabled )
                     {
-                        indexTransactions.ForEach( t => RockQueue.TransactionQueue.Enqueue( t ) );
+                        indexTransactions.ForEach( t => Transactions.RockQueue.TransactionQueue.Enqueue( t ) );
                     }
                 } );
             }
@@ -560,12 +576,15 @@ namespace Rock.Data
                 // This logic is normally handled in the SaveChanges method, but since the BulkInsert bypasses those
                 // model hooks, achievements need to be updated here. Also, it is not necessary for this logic to complete before this
                 // transaction can continue processing and exit.
-                new AchievementsProcessingTransaction( records as IEnumerable<IEntity> ).Enqueue();
+                new AchievementsProcessingTransaction
+                {
+                    SourceEntities = records as IEnumerable<IEntity>
+                }.Send();
             }
         }
 
         /// <summary>
-        /// Does a direct bulk UPDATE. 
+        /// Does a direct bulk UPDATE.
         /// Example: rockContext.BulkUpdate( personQuery, p => new Person { LastName = "Decker" } );
         /// NOTE: This bypasses the Rock and a bunch of the EF Framework and automatically commits the changes to the database
         /// </summary>
@@ -686,7 +705,7 @@ namespace Rock.Data
 
         /// <summary>
         /// Determines whether the entity matches the current and/or previous qualifier values.
-        /// If 
+        /// If
         /// </summary>
         /// <param name="item">The item.</param>
         /// <param name="properties">The properties.</param>

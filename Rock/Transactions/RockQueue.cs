@@ -21,7 +21,7 @@ using System.Linq;
 namespace Rock.Transactions
 {
     /// <summary>
-    /// 
+    /// The Rock Queue
     /// </summary>
     static public class RockQueue
     {
