@@ -662,11 +662,17 @@ namespace RockWeb.Blocks.WorkFlow
                 }
 
                 var attribute = AttributeCache.Get( formAttribute.AttributeId );
-
+                
                 string value = attribute.DefaultValue;
-                var workflowAttributeValue = _workflow != null ? _workflow.GetAttributeValue( attribute.Key ) : null;
-                var activityAttributeValue = _activity != null ? _activity.GetAttributeValue( attribute.Key ) : null;
-                value = value ?? workflowAttributeValue ?? activityAttributeValue;
+                if ( _workflow != null && _workflow.AttributeValues.ContainsKey( attribute.Key ) && _workflow.AttributeValues[attribute.Key] != null )
+                {
+                    value = _workflow.AttributeValues[attribute.Key].Value;
+                }
+                // Now see if the key is in the activity attributes so we can get it's value
+                else if ( _activity != null && _activity.AttributeValues.ContainsKey( attribute.Key ) && _activity.AttributeValues[attribute.Key] != null )
+                {
+                    value = _activity.AttributeValues[attribute.Key].Value;
+                }
 
                 if ( !string.IsNullOrWhiteSpace( formAttribute.PreHtml ) )
                 {
