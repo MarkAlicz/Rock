@@ -876,16 +876,15 @@ namespace RockWeb.Blocks.WorkFlow
                     }
             }
 
-            dvpMaritalStatus.DefinedTypeId = DefinedTypeCache.GetId( Rock.SystemGuid.DefinedType.PERSON_MARITAL_STATUS.AsGuid() );
-            dvpMaritalStatus.Required = form.PersonEntryMaritalStatusEntryOption == WorkflowActionFormPersonEntryOption.Required;
-            dvpMaritalStatus.Visible = form.PersonEntryMaritalStatusEntryOption != WorkflowActionFormPersonEntryOption.Hidden;
-
             if ( setValues )
             {
-                SetPerson2Visibility( cbShowPerson2.Checked );
+                pePerson2.Visible = cbShowPerson2.Checked;
             }
 
-            if ( cbShowPerson2.Checked )
+            dvpMaritalStatus.DefinedTypeId = DefinedTypeCache.GetId( Rock.SystemGuid.DefinedType.PERSON_MARITAL_STATUS.AsGuid() );
+            dvpMaritalStatus.Required = form.PersonEntryMaritalStatusEntryOption == WorkflowActionFormPersonEntryOption.Required;
+
+            if ( form.PersonEntryMaritalStatusEntryOption == WorkflowActionFormPersonEntryOption.Hidden )
             {
                 dvpMaritalStatus.Visible = false;
             }
@@ -906,6 +905,8 @@ namespace RockWeb.Blocks.WorkFlow
                     var spouse = CurrentPerson.GetSpouse();
                     if ( spouse != null )
                     {
+                        // don't show marital status if person has a spouse
+                        dvpMaritalStatus.Visible = false;
                         pePerson2.SetFromPerson( spouse );
                     }
                     else
@@ -993,18 +994,9 @@ namespace RockWeb.Blocks.WorkFlow
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void cbShowPerson2_CheckedChanged( object sender, EventArgs e )
         {
-            SetPerson2Visibility( cbShowPerson2.Checked );
-        }
+            pePerson2.Visible = cbShowPerson2.Checked;
 
-        /// <summary>
-        /// Sets the person2 visibility.
-        /// </summary>
-        private void SetPerson2Visibility( bool showPerson2 )
-        {
-            pePerson2.Visible = showPerson2;
-
-            /* TODO
-            if ( showPerson2 || AlwaysHideMaritalStatusPrompt )
+            if ( cbShowPerson2.Checked )
             {
                 // if prompting for a spouse, don't show the marital status option
                 // If adding/editing a spouse, MaritalStatus will be set to Married
@@ -1012,10 +1004,29 @@ namespace RockWeb.Blocks.WorkFlow
             }
             else
             {
-                var form = _actionType.WorkflowForm;
-                dvpMaritalStatus.Visible = form.PersonEntryMaritalStatusEntryOption != WorkflowActionFormPersonEntryOption.Hidden;
+                if ( _actionType != null && _actionType.WorkflowForm != null )
+                {
+                    var form = _actionType.WorkflowForm;
+                    if ( form.PersonEntryMaritalStatusEntryOption == WorkflowActionFormPersonEntryOption.Hidden )
+                    {
+                        dvpMaritalStatus.Visible = false;
+                    }
+                    else
+                    {
+                        // if not prompting for a spouse, and they don't currently have spouse, prompt for marital status
+                        dvpMaritalStatus.Visible = true;
+                        if ( form.PersonEntryAutofillCurrentPerson && CurrentPerson != null )
+                        {
+                            var currentSpouse = CurrentPerson.GetSpouse();
+                            if ( currentSpouse != null )
+                            {
+                                // don't prompt for marital status if they already have a spouse
+                                dvpMaritalStatus.Visible = false;
+                            }
+                        }
+                    }
+                }
             }
-            */
         }
 
         /// <summary>
