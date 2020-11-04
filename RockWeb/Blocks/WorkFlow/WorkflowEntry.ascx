@@ -40,7 +40,6 @@
                                     </div>
                                 </div>
 
-
                                 <asp:Panel ID="pnlPersonEntryRow1" runat="server" CssClass="row">
                                     <%-- Person 1 --%>
                                     <asp:Panel ID="pnlPersonEntryRow1Column1" runat="server" CssClass="col-md-6">
@@ -68,7 +67,6 @@
                                 <asp:Literal ID="lPersonEntryPostHtml" runat="server" />
                             </asp:Panel>
 
-
                             <%-- Workflow Attribute Controls  --%>
                             <asp:PlaceHolder ID="phAttributes" runat="server" />
 
@@ -78,7 +76,6 @@
                                 <asp:PlaceHolder ID="phActions" runat="server" />
                             </div>
 
-                            
                         </asp:Panel>
 
                         <Rock:NotificationBox ID="nbMessage" runat="server" Dismissable="true" CssClass="margin-t-lg" />
@@ -98,6 +95,19 @@
             </div>
 
         </div>
+
+        <script>
+            function handleWorkflowActionButtonClick(validationGroup, b, c) {
+                // make sure page is valid before doing the postback (from this button's href)
+                if (Page_ClientValidate(validationGroup)) {
+                    // 
+                    $(this).button('loading');
+                    return true; 
+                } else {
+                    return false;
+                }
+            }
+        </script>
 
     </ContentTemplate>
 </asp:UpdatePanel>

@@ -63,7 +63,61 @@ namespace Rock.SystemGuid
         /// </summary>
         public const string BLOCK_TEMPLATE_MOBILE_PRAYER_SESSION = "6F1F6BAB-B403-48D1-BF6A-52B16361279C";
 
-        #endregion
+        #endregion Block Template
+
+        #region Button Styles
+
+        /// <summary>
+        /// Button HTML - Primary 
+        /// </summary>
+        public const string BUTTON_HTML_PRIMARY = "FDC397CD-8B4A-436E-BEA1-BCE2E6717C03";
+
+        /// <summary>
+        /// Button HTML - Secondary 
+        /// </summary>
+        public const string BUTTON_HTML_SECONDARY = "8CF6E927-4FA5-4241-991C-391038B79631";
+
+        /// <summary>
+        /// Button HTML - Deny 
+        /// </summary>
+        public const string BUTTON_HTML_DENY = "D6B809A9-C1CC-4EBB-816E-33D8C1E53EA4";
+
+        /// <summary>
+        /// Button HTML - Approve 
+        /// </summary>
+        public const string BUTTON_HTML_APPROVE = "C88FEF94-95B9-444A-BC93-58E983F3C047";
+
+        /// <summary>
+        /// Button HTML - Success 
+        /// </summary>
+        public const string BUTTON_HTML_SUCCESS = "53CA2CB9-8BFA-450C-A3AA-FD3F3FD3BC8A";
+
+        /// <summary>
+        /// Button HTML - Info 
+        /// </summary>
+        public const string BUTTON_HTML_INFO = "3C026B37-29D4-47CB-BB6E-DA43AFE779FE";
+
+        /// <summary>
+        /// Button HTML - Warning 
+        /// </summary>
+        public const string BUTTON_HTML_WARNING = "F03C9591-C497-4E27-A714-6A482E745141";
+
+        /// <summary>
+        /// Button HTML - Danger 
+        /// </summary>
+        public const string BUTTON_HTML_DANGER = "9B329020-E074-4326-8831-9DD534F491DF";
+
+        /// <summary>
+        /// Button HTML - Default 
+        /// </summary>
+        public const string BUTTON_HTML_DEFAULT = "638BEEE0-2F8F-4706-B9A4-5BAB70386697";
+
+        /// <summary>
+        /// Button HTML - Cancel 
+        /// </summary>
+        public const string BUTTON_HTML_CANCEL = "5683E775-B9F3-408C-80AC-94DE0E51CF3A";
+
+        #endregion Button Styles
 
         #region Campus
 

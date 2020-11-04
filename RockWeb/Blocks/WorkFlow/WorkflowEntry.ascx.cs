@@ -198,7 +198,7 @@ namespace RockWeb.Blocks.WorkFlow
 
             if ( HydrateObjects() )
             {
-                BuildForm( false );
+                BuildWorkflowActionForm( false );
             }
         }
 
@@ -231,7 +231,7 @@ namespace RockWeb.Blocks.WorkFlow
             {
                 if ( HydrateObjects() )
                 {
-                    BuildForm( true );
+                    BuildWorkflowActionForm( true );
                     ProcessActionRequest();
                 }
             }
@@ -264,8 +264,6 @@ namespace RockWeb.Blocks.WorkFlow
 
         #region Events
 
-        // handlers called by the controls on your block
-
         /// <summary>
         /// Handles the BlockUpdated event of the control.
         /// </summary>
@@ -291,6 +289,10 @@ namespace RockWeb.Blocks.WorkFlow
 
         #region Methods
 
+        /// <summary>
+        /// Hydrates the objects.
+        /// </summary>
+        /// <returns></returns>
         private bool HydrateObjects()
         {
             var workflowType = GetWorkflowType();
@@ -461,18 +463,52 @@ namespace RockWeb.Blocks.WorkFlow
 
                 // Find first active action form
                 int personId = CurrentPerson != null ? CurrentPerson.Id : 0;
+
+                // get active workflow activities
+                // this is an Enumerable since _workflow.Activities is a collection that is lazy loaded
+                IEnumerable<WorkflowActivity> activeWorkflowActivitiesList = _workflow.Activities.Where( a => a.IsActive );
+
                 int? actionId = PageParameter( PageParameterKey.ActionId ).AsIntegerOrNull();
-                foreach ( var activity in _workflow.Activities
-                    .Where( a => a.IsActive
-                        && ( !actionId.HasValue || a.Actions.Any( ac => ac.Id == actionId.Value ) )
-                        && (
-                            canEdit
-                            || ( !a.AssignedGroupId.HasValue && !a.AssignedPersonAliasId.HasValue )
-                            || ( a.AssignedPersonAlias != null && a.AssignedPersonAlias.PersonId == personId )
-                            || ( a.AssignedGroup != null && a.AssignedGroup.Members.Any( m => m.PersonId == personId ) )
-                        ) )
-                    .ToList()
-                    .OrderBy( a => a.ActivityTypeCache.Order ) )
+                if ( actionId.HasValue )
+                {
+                    // if a specific ActionId was specified, narrow it down to ones with the specified actionId
+                    activeWorkflowActivitiesList = activeWorkflowActivitiesList.Where( a => a.Actions.Any( ac => ac.Id == actionId.Value ) );
+                }
+
+                if ( !canEdit )
+                {
+                    // if user isn't authorized to edit, limit to ones that are any of the following conditions
+                    // - Not assigned
+                    // - Assigned to current person
+                    // - Assigned to a group that the current user is a member of
+
+                    activeWorkflowActivitiesList = activeWorkflowActivitiesList.Where( a =>
+                    {
+                        if ( !a.AssignedGroupId.HasValue && !a.AssignedPersonAliasId.HasValue )
+                        {
+                            // not assigned 
+                            return true;
+                        }
+
+                        if ( a.AssignedPersonAlias != null && a.AssignedPersonAlias.PersonId == personId )
+                        {
+                            // assigned to current person
+                            return true;
+                        }
+
+                        if ( a.AssignedGroup != null && a.AssignedGroup.Members.Any( m => m.PersonId == personId ) )
+                        {
+                            // Assigned to a group that the current user is a member of
+                            return true;
+                        }
+
+                        return false;
+                    } );
+                }
+
+                activeWorkflowActivitiesList = activeWorkflowActivitiesList.OrderBy( a => a.ActivityTypeCache.Order ).ToList();
+
+                foreach ( var activity in activeWorkflowActivitiesList )
                 {
                     if ( canEdit || activity.ActivityTypeCache.IsAuthorized( Authorization.VIEW, CurrentPerson ) )
                     {
@@ -586,7 +622,7 @@ namespace RockWeb.Blocks.WorkFlow
         /// Builds the WorkflowActionForm.
         /// </summary>
         /// <param name="setValues">if set to <c>true</c> [set values].</param>
-        private void BuildForm( bool setValues )
+        private void BuildWorkflowActionForm( bool setValues )
         {
             var mergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields( this.RockPage, this.CurrentPerson );
             mergeFields.Add( "Action", _action );
@@ -610,6 +646,7 @@ namespace RockWeb.Blocks.WorkFlow
                 hlblDateAdded.Visible = false;
             }
 
+            pnlPersonEntry.Visible = form.AllowPersonEntry;
             if ( form.AllowPersonEntry )
             {
                 BuildPersonEntryForm( form, setValues, mergeFields );
@@ -710,34 +747,52 @@ namespace RockWeb.Blocks.WorkFlow
             phActions.Controls.Clear();
             foreach ( var action in form.Actions.Split( new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries ) )
             {
-                var details = action.Split( new char[] { '^' } );
-                if ( details.Length == 0 )
+                var actionParts = action.Split( new char[] { '^' } );
+                if ( actionParts.Length == 0 )
                 {
                     continue;
                 }
 
-                // Get the button HTML
+                var buttonText = actionParts[0].EncodeHtml();
+
+                // Get the button HTML. If actionParts has a guid at [1],
+                // get the buttonHtml from the DefinedValue with that Guid.
+                // Otherwise, use a default
                 string buttonHtml = string.Empty;
-                if ( details.Length > 1 )
+                DefinedValueCache buttonDefinedValue = null;
+                if ( actionParts.Length > 1 )
                 {
-                    var definedValue = DefinedValueCache.Get( details[1].AsGuid() );
-                    if ( definedValue != null )
+                    Guid? buttonHtmlDefinedValueGuid = actionParts[1].AsGuidOrNull();
+                    if ( buttonHtmlDefinedValueGuid.HasValue )
                     {
-                        buttonHtml = definedValue.GetAttributeValue( "ButtonHTML" );
+                        buttonDefinedValue = DefinedValueCache.Get( buttonHtmlDefinedValueGuid.Value );
                     }
                 }
 
-                if ( string.IsNullOrWhiteSpace( buttonHtml ) )
+                if ( buttonDefinedValue == null )
+                {
+                    // actionParts didn't include a Guid for the Button Defined Value, so default to PRIMARY button
+                    buttonDefinedValue = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.BUTTON_HTML_PRIMARY.AsGuid() );
+                }
+
+                if ( buttonDefinedValue != null )
+                {
+                    buttonHtml = buttonDefinedValue.GetAttributeValue( "ButtonHTML" );
+                }
+
+                if ( buttonHtml.IsNotNullOrWhiteSpace() )
                 {
                     buttonHtml = "<a href=\"{{ ButtonLink }}\" onclick=\"{{ ButtonClick }}\" class='btn btn-primary' data-loading-text='<i class=\"fa fa-refresh fa-spin\"></i> {{ ButtonText }}'>{{ ButtonText }}</a>";
                 }
 
                 var buttonMergeFields = new Dictionary<string, object>();
-                buttonMergeFields.Add( "ButtonText", details[0].EncodeHtml() );
-                string buttonClickScript = string.Format( "if ( Page_ClientValidate('{0}') ) {{ $(this).button('loading'); return true; }} else {{ return false; }}", BlockValidationGroup );
+                buttonMergeFields.Add( "ButtonText", buttonText );
+
+                string buttonClickScript = string.Format( "handleWorkflowActionButtonClick('{0}', this);", BlockValidationGroup );
                 buttonMergeFields.Add( "ButtonClick", buttonClickScript );
 
-                buttonMergeFields.Add( "ButtonLink", Page.ClientScript.GetPostBackClientHyperlink( this, details[0] ) );
+                var buttonLinkScript = Page.ClientScript.GetPostBackClientHyperlink( this, buttonText );
+                buttonMergeFields.Add( "ButtonLink", buttonLinkScript );
 
                 buttonHtml = buttonHtml.ResolveMergeFields( buttonMergeFields );
 
@@ -792,10 +847,12 @@ namespace RockWeb.Blocks.WorkFlow
             dvpMaritalStatus.Required = form.PersonEntryMaritalStatusEntryOption == WorkflowActionFormPersonEntryOption.Required;
             dvpMaritalStatus.Visible = form.PersonEntryMaritalStatusEntryOption != WorkflowActionFormPersonEntryOption.Hidden;
 
-            acPersonEntryAddress.Visible = form.PersonEntryAddressEntryOption != WorkflowActionFormPersonEntryOption.Hidden;
+            var promptForAddress = ( form.PersonEntryAddressEntryOption != WorkflowActionFormPersonEntryOption.Hidden ) && form.PersonEntryGroupLocationTypeValueId.HasValue;
             acPersonEntryAddress.Required = form.PersonEntryAddressEntryOption == WorkflowActionFormPersonEntryOption.Required;
 
             lPersonEntryPostHtml.Text = form.PersonEntryPostHtml.ResolveMergeFields( mergeFields );
+
+            acPersonEntryAddress.Visible = promptForAddress;
 
             if ( form.PersonEntryAutofillCurrentPerson && setValues && CurrentPerson != null )
             {
@@ -807,17 +864,24 @@ namespace RockWeb.Blocks.WorkFlow
                     pePerson2.SetFromPerson( spouse );
                 }
 
-                var primaryFamily = CurrentPerson.PrimaryFamily;
-                if ( primaryFamily != null )
+                if ( promptForAddress )
                 {
-                    var familyLocation = primaryFamily.GroupLocations.Where( a => a.GroupLocationTypeValueId == form.PersonEntryGroupLocationTypeValueId ).FirstOrDefault();
-                    if ( familyLocation != null )
+                    var primaryFamilyId = CurrentPerson.PrimaryFamilyId;
+                    var personEntryGroupLocationTypeValueId = form.PersonEntryGroupLocationTypeValueId.Value;
+                    if ( primaryFamilyId.HasValue )
                     {
-                        acPersonEntryAddress.SetValues( familyLocation.Location );
-                    }
-                    else
-                    {
-                        acPersonEntryAddress.SetValues( null );
+                        var rockContext = new RockContext();
+                        var familyLocation = new GroupLocationService( rockContext ).Queryable()
+                            .Where( a => a.GroupId == primaryFamilyId && a.GroupLocationTypeValueId == form.PersonEntryGroupLocationTypeValueId ).Select( a => a.Location ).FirstOrDefault();
+
+                        if ( familyLocation != null )
+                        {
+                            acPersonEntryAddress.SetValues( familyLocation );
+                        }
+                        else
+                        {
+                            acPersonEntryAddress.SetValues( null );
+                        }
                     }
                 }
             }
@@ -913,24 +977,22 @@ namespace RockWeb.Blocks.WorkFlow
 
             var rockContext = new RockContext();
 
-            if ( CurrentPersonId.HasValue && form.PersonEntryHideIfCurrentPersonKnown )
-            {
-                return;
-            }
-
             int? existingPersonId;
             int? existingPersonSpouseId = null;
-            if ( CurrentPersonId.HasValue && form.PersonEntryAutofillCurrentPerson )
-            {
-                existingPersonId = CurrentPersonId;
 
-                if ( pePerson2.Visible )
+            if ( CurrentPersonId.HasValue && ( form.PersonEntryAutofillCurrentPerson || form.PersonEntryHideIfCurrentPersonKnown ) )
+            {
+                existingPersonId = CurrentPersonId.Value;
+                var existingPersonSpouse = CurrentPerson.GetSpouse( rockContext );
+                if ( existingPersonSpouse != null )
                 {
-                    var existingPersonSpouse = CurrentPerson.GetSpouse( rockContext );
-                    if ( existingPersonSpouse != null )
-                    {
-                        existingPersonSpouseId = existingPersonSpouse.Id;
-                    }
+                    existingPersonSpouseId = existingPersonSpouse.Id;
+                }
+
+                if ( form.PersonEntryHideIfCurrentPersonKnown )
+                {
+                    SavePersonEntryToAttributeValues( existingPersonId.Value, existingPersonSpouseId, CurrentPerson.PrimaryFamily );
+                    return;
                 }
             }
             else
@@ -953,10 +1015,14 @@ namespace RockWeb.Blocks.WorkFlow
                 personEntryPerson.MaritalStatusValueId = dvpMaritalStatus.SelectedDefinedValueId;
             }
 
-            // save person 1 to database and re-fetch to get any newly create family, or other things that would happen on PreSave changes, etc
+            // save person 1 to database and re-fetch to get any newly created family, or other things that would happen on PreSave changes, etc
             rockContext.SaveChanges();
 
+            var personAliasService = new PersonAliasService( rockContext );
+
             int personEntryPersonId = personEntryPerson.Id;
+            int? personEntryPersonSpouseId = null;
+
             var personService = new PersonService( rockContext );
             var primaryFamily = personService.GetSelect( personEntryPersonId, s => s.PrimaryFamily );
 
@@ -981,8 +1047,11 @@ namespace RockWeb.Blocks.WorkFlow
                 }
 
                 rockContext.SaveChanges();
+
+                personEntryPersonSpouseId = personEntryPersonSpouse.Id;
             }
 
+            SavePersonEntryToAttributeValues( personEntryPersonId, personEntryPersonSpouseId, primaryFamily );
 
             if ( cpPersonEntryCampus.Visible )
             {
@@ -1029,6 +1098,70 @@ namespace RockWeb.Blocks.WorkFlow
             }
 
             rockContext.SaveChanges();
+        }
+
+        /// <summary>
+        /// Saves the person entry to attribute values.
+        /// </summary>
+        /// <param name="personEntryPersonId">The person entry person identifier.</param>
+        /// <param name="personEntryPersonSpouseId">The person entry person spouse identifier.</param>
+        /// <param name="primaryFamily">The primary family.</param>
+        private void SavePersonEntryToAttributeValues( int personEntryPersonId, int? personEntryPersonSpouseId, Group primaryFamily )
+        {
+            var form = _actionType.WorkflowForm;
+            var personAliasService = new PersonAliasService( new RockContext() );
+
+            if ( form.PersonEntryPersonAttributeGuid.HasValue )
+            {
+                AttributeCache personEntryPersonAttribute = form.FormAttributes.Where( a => a.Attribute.Guid == form.PersonEntryPersonAttributeGuid.Value ).Select( a => a.Attribute ).FirstOrDefault();
+                var item = GetWorkflowAttributeEntity( personEntryPersonAttribute );
+                if ( item != null )
+                {
+                    var primaryAliasGuid = personAliasService.GetPrimaryAliasGuid( personEntryPersonId );
+                    item.SetAttributeValue( personEntryPersonAttribute.Key, primaryAliasGuid );
+                }
+            }
+
+            if ( form.PersonEntryFamilyAttributeGuid.HasValue )
+            {
+                AttributeCache personEntryFamilyAttribute = form.FormAttributes.Where( a => a.Attribute.Guid == form.PersonEntryFamilyAttributeGuid.Value ).Select( a => a.Attribute ).FirstOrDefault();
+                var item = GetWorkflowAttributeEntity( personEntryFamilyAttribute );
+                if ( item != null )
+                {
+                    item.SetAttributeValue( personEntryFamilyAttribute.Key, primaryFamily.Guid );
+                }
+            }
+
+            if ( form.PersonEntrySpouseAttributeGuid.HasValue && personEntryPersonSpouseId.HasValue )
+            {
+                AttributeCache personEntrySpouseAttribute = form.FormAttributes.Where( a => a.Attribute.Guid == form.PersonEntrySpouseAttributeGuid.Value ).Select( a => a.Attribute ).FirstOrDefault();
+                var item = GetWorkflowAttributeEntity( personEntrySpouseAttribute );
+                if ( item != null )
+                {
+                    var primaryAliasGuid = personAliasService.GetPrimaryAliasGuid( personEntryPersonSpouseId.Value );
+                    item.SetAttributeValue( personEntrySpouseAttribute.Key, primaryAliasGuid );
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets the workflow attribute entity.
+        /// </summary>
+        /// <param name="attribute">The attribute.</param>
+        /// <returns></returns>
+        private IHasAttributes GetWorkflowAttributeEntity( AttributeCache attribute )
+        {
+            Rock.Attribute.IHasAttributes item = null;
+            if ( attribute.EntityTypeId == _workflow.TypeId )
+            {
+                item = _workflow;
+            }
+            else if ( attribute.EntityTypeId == _activity.TypeId )
+            {
+                item = _activity;
+            }
+
+            return item;
         }
 
         /// <summary>
@@ -1093,31 +1226,22 @@ namespace RockWeb.Blocks.WorkFlow
             var form = _actionType.WorkflowForm;
 
             var values = new Dictionary<int, string>();
-            foreach ( var formAttribute in form.FormAttributes.OrderBy( a => a.Order ) )
+            var editableFormAttributes = form.FormAttributes.Where( a => a.IsVisible && !a.IsReadOnly ).OrderBy( a => a.Order );
+            foreach ( WorkflowActionFormAttributeCache formAttribute in editableFormAttributes )
             {
-                if ( formAttribute.IsVisible && !formAttribute.IsReadOnly )
+                var attribute = AttributeCache.Get( formAttribute.AttributeId );
+                var control = phAttributes.FindControl( string.Format( "attribute_field_{0}", formAttribute.AttributeId ) );
+
+                if ( attribute != null && control != null )
                 {
-                    var attribute = AttributeCache.Get( formAttribute.AttributeId );
-                    var control = phAttributes.FindControl( string.Format( "attribute_field_{0}", formAttribute.AttributeId ) );
+                    Rock.Attribute.IHasAttributes item = GetWorkflowAttributeEntity( attribute );
 
-                    if ( attribute != null && control != null )
+                    if ( item != null )
                     {
-                        Rock.Attribute.IHasAttributes item = null;
-                        if ( attribute.EntityTypeId == _workflow.TypeId )
-                        {
-                            item = _workflow;
-                        }
-                        else if ( attribute.EntityTypeId == _activity.TypeId )
-                        {
-                            item = _activity;
-                        }
-
-                        if ( item != null )
-                        {
-                            item.SetAttributeValue( attribute.Key, attribute.FieldType.Field.GetEditValue( attribute.GetControl( control ), attribute.QualifierValues ) );
-                        }
+                        item.SetAttributeValue( attribute.Key, attribute.FieldType.Field.GetEditValue( attribute.GetControl( control ), attribute.QualifierValues ) );
                     }
                 }
+
             }
         }
 
@@ -1178,16 +1302,7 @@ namespace RockWeb.Blocks.WorkFlow
                 var attribute = AttributeCache.Get( _actionType.WorkflowForm.ActionAttributeGuid.Value );
                 if ( attribute != null )
                 {
-                    Rock.Attribute.IHasAttributes item = null;
-                    if ( attribute.EntityTypeId == _workflow.TypeId )
-                    {
-                        item = _workflow;
-                    }
-                    else if ( attribute.EntityTypeId == _activity.TypeId )
-                    {
-                        item = _activity;
-                    }
-
+                    Rock.Attribute.IHasAttributes item = GetWorkflowAttributeEntity( attribute );
                     if ( item != null )
                     {
                         item.SetAttributeValue( attribute.Key, formAction );

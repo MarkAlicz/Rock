@@ -259,33 +259,6 @@ namespace Rock.Web.Cache
         public int? PersonEntryGroupLocationTypeValueId { get; private set; }
 
         /// <summary>
-        /// Gets the person entry person attribute identifier.
-        /// </summary>
-        /// <value>
-        /// The person entry person attribute identifier.
-        /// </value>
-        [DataMember]
-        public int? PersonEntryPersonAttributeId { get; private set; }
-
-        /// <summary>
-        /// Gets the person entry spouse attribute identifier.
-        /// </summary>
-        /// <value>
-        /// The person entry spouse attribute identifier.
-        /// </value>
-        [DataMember]
-        public int? PersonEntrySpouseAttributeId { get; private set; }
-
-        /// <summary>
-        /// Gets the person entry family attribute identifier.
-        /// </summary>
-        /// <value>
-        /// The person entry family attribute identifier.
-        /// </value>
-        [DataMember]
-        public int? PersonEntryFamilyAttributeId { get; private set; }
-
-        /// <summary>
         /// Gets the person entry family attribute unique identifier. (The one used to set the Added/Edited Person's Family to)
         /// </summary>
         /// <value>
