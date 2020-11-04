@@ -537,6 +537,15 @@ namespace Rock.Data
         /// <param name="records">The records.</param>
         public virtual void BulkInsert<T>( IEnumerable<T> records ) where T : class
         {
+            // This logic is normally handled in the SaveChanges method, but since the BulkInsert bypasses those
+            // model hooks, achievements need to be updated here. Also, it is not necessary for this logic to complete before this
+            // transaction can continue processing and exit.
+            var entitiesForAchievements = new List<IEntity>();
+            var achievementsProcessingTransaction = new AchievementsProcessingTransaction
+            {
+                SourceEntities = entitiesForAchievements
+            };
+
             // ensure CreatedDateTime and ModifiedDateTime is set
             var currentDateTime = RockDateTime.Now;
             var currentPersonAliasId = this.GetCurrentPersonAlias()?.Id;
@@ -554,6 +563,8 @@ namespace Rock.Data
                         model.CreatedByPersonAliasId = model.CreatedByPersonAliasId ?? currentPersonAliasId;
                         model.ModifiedByPersonAliasId = model.ModifiedByPersonAliasId ?? currentPersonAliasId;
                     }
+
+                    entitiesForAchievements.Add( model );
                 }
             }
 
@@ -571,15 +582,9 @@ namespace Rock.Data
             EntityFramework.Utilities.Configuration.SqlBulkCopyOptions = System.Data.SqlClient.SqlBulkCopyOptions.CheckConstraints;
             EntityFramework.Utilities.EFBatchOperation.For( this, this.Set<T>() ).InsertAll( records );
 
-            if ( typeof( T ).GetInterfaces().Contains( typeof( IEntity ) ) )
+            if ( entitiesForAchievements.Any() )
             {
-                // This logic is normally handled in the SaveChanges method, but since the BulkInsert bypasses those
-                // model hooks, achievements need to be updated here. Also, it is not necessary for this logic to complete before this
-                // transaction can continue processing and exit.
-                new AchievementsProcessingTransaction
-                {
-                    SourceEntities = records as IEnumerable<IEntity>
-                }.Send();
+                achievementsProcessingTransaction.Send();
             }
         }
 

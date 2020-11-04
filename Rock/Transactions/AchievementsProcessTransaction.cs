@@ -54,8 +54,8 @@ namespace Rock.Transactions
                 return;
             }
 
-            var rockContext = new RockContext();
-            var entity = Reflection.GetIEntityForEntityType( message.EntityTypeId, message.EntityGuid, rockContext );
+            var type = Type.GetType( message.EntityTypeName );
+            var entity = Reflection.GetIEntityForEntityType( type, message.EntityGuid );
 
             if ( entity == null )
             {
@@ -75,7 +75,7 @@ namespace Rock.Transactions
             return SourceEntities?.Select( e => new Message
             {
                 EntityGuid = e.Guid,
-                EntityTypeId = e.TypeId
+                EntityTypeName = e.TypeName
             } );
         }
 
@@ -89,12 +89,12 @@ namespace Rock.Transactions
         public sealed class Message : ICommandMessage<StartTaskQueue>
         {
             /// <summary>
-            /// Gets or sets the entity type identifier.
+            /// Gets or sets the entity type name.
             /// </summary>
             /// <value>
             /// The entity type identifier.
             /// </value>
-            public int EntityTypeId { get; set; }
+            public string EntityTypeName { get; set; }
 
             /// <summary>
             /// Gets or sets the entity guid.

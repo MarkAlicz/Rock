@@ -623,6 +623,12 @@
     <Compile Include="Logging\RockLogSystemSettings.cs" />
     <Compile Include="Logging\RockSerilogReader.cs" />
     <Compile Include="Model\AchievementAttemptService.Partial.cs" />
+    <Compile Include="Model\CodeGenerated\WebFarmNodeLogService.cs" />
+    <Compile Include="Model\CodeGenerated\WebFarmNodeService.cs" />
+    <Compile Include="Model\CodeGenerated\WebFarmSettingsService.cs" />
+    <Compile Include="Model\WebFarmNodeLog.cs" />
+    <Compile Include="Model\WebFarmNode.cs" />
+    <Compile Include="Model\WebFarmSettings.cs" />
     <Compile Include="Model\AttendanceCheckInSession.cs" />
     <Compile Include="Model\AuthClaim.cs" />
     <Compile Include="Model\AuthClient.cs" />
@@ -716,6 +722,7 @@
     <Compile Include="Utility\Settings\RockInstanceDatabaseConfiguration.cs" />
     <Compile Include="Utility\TimeInterval.cs" />
     <Compile Include="Utility\TimeIntervalSetting.cs" />
+    <Compile Include="WebFarm\RockWebFarm.cs" />
     <Compile Include="Web\Cache\Entities\BinaryFileTypeCache.cs" />
     <Compile Include="Web\Cache\Entities\StepTypeCache.cs" />
     <Compile Include="Web\Cache\Entities\StepProgramCache.cs" />

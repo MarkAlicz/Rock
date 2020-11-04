@@ -198,6 +198,9 @@ namespace RockWeb
 
                 // Start the Rock Message Bus
                 RockMessageBus.StartAsync().Wait();
+
+                // Start the web farm
+                RockWebFarm.Start();
             }
             catch ( Exception ex )
             {
