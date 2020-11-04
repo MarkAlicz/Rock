@@ -52,7 +52,7 @@
                                     </asp:Panel>
                                 </asp:Panel>
 
-                                <Rock:RockCheckBox ID="cbShowPerson2" runat="server" Text="Show Person2" Checked="true" AutoPostBack="true" OnCheckedChanged="cbShowPerson2_CheckedChanged" />
+                                <Rock:RockCheckBox ID="cbShowPerson2" runat="server" Text="Show Person2" Checked="false" AutoPostBack="true" OnCheckedChanged="cbShowPerson2_CheckedChanged" />
 
                                 <%-- Person Entry Address and Marital Status --%>
                                 <asp:Panel ID="pnlPersonEntryRow2" CssClass="row" runat="server">
@@ -102,7 +102,7 @@
                 if (Page_ClientValidate(validationGroup)) {
                     // 
                     $(this).button('loading');
-                    return true; 
+                    return true;
                 } else {
                     return false;
                 }

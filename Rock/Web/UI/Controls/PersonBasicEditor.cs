@@ -503,7 +503,7 @@ namespace Rock.Web.UI.Controls
         }
 
         /// <summary>
-        /// Gets or sets the person group role identifier.
+        /// Gets or sets the person group role identifier. (Adult or Child)
         /// </summary>
         /// <value>
         /// The person group role identifier.
@@ -1038,6 +1038,18 @@ namespace Rock.Web.UI.Controls
             this.PersonMaritalStatusValueId = person.MaritalStatusValueId;
             this.PersonBirthDate = person.BirthDate;
             this.PersonGradeOffset = person.GradeOffset;
+
+            if ( person.AgeClassification == AgeClassification.Child )
+            {
+                var childRoleId = GroupTypeCache.GetFamilyGroupType().Roles.FirstOrDefault( r => r.Guid == Rock.SystemGuid.GroupRole.GROUPROLE_FAMILY_MEMBER_CHILD.AsGuid() ).Id;
+                this.PersonGroupRoleId = childRoleId;
+            }
+            else
+            {
+                var adultRoleId = GroupTypeCache.GetFamilyGroupType().Roles.FirstOrDefault( r => r.Guid == Rock.SystemGuid.GroupRole.GROUPROLE_FAMILY_MEMBER_ADULT.AsGuid() ).Id;
+                this.PersonGroupRoleId = adultRoleId;
+            }
+
             this.PersonConnectionStatusValueId = person.ConnectionStatusValueId;
             this.Email = person.Email;
 

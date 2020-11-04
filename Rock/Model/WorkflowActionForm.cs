@@ -498,8 +498,8 @@ namespace Rock.Model
         /// <summary>
         /// Control is visible, but a value is not required
         /// </summary>
-        [Description( "Enabled" )]
-        Enabled = 1,
+        [Description( "Optional" )]
+        Optional = 1,
 
         /// <summary>
         /// Control is visible, and a value is required

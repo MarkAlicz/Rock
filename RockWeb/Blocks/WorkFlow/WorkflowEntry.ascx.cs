@@ -127,10 +127,15 @@ namespace RockWeb.Blocks.WorkFlow
 
         #region Fields
 
-        private WorkflowActionTypeCache _actionType = null;
+        // Have a class level RockContext, WorkflowService and Workflow, etc that will be used for all WorkflowService operations
+        // This will allow workflow values to be persisted correctly since they are all using the same RockContext
+        private RockContext _workflowRockContext;
+        private WorkflowService _workflowService;
         private Workflow _workflow = null;
         private WorkflowActivity _activity = null;
         private WorkflowAction _action = null;
+
+        private WorkflowActionTypeCache _actionType = null;
 
         #endregion
 
@@ -280,7 +285,11 @@ namespace RockWeb.Blocks.WorkFlow
         /// <param name="eventArgument">A <see cref="T:System.String" /> that represents an optional event argument to be passed to the event handler.</param>
         public void RaisePostBackEvent( string eventArgument )
         {
-            GetWorkflowFormPersonEntryValues();
+            using ( var personEntryRockContext = new RockContext() )
+            {
+                GetWorkflowFormPersonEntryValues( personEntryRockContext );
+            }
+
             GetWorkflowFormAttributeValues();
             CompleteFormAction( eventArgument );
         }
@@ -326,8 +335,8 @@ namespace RockWeb.Blocks.WorkFlow
                 return false;
             }
 
-            var rockContext = new RockContext();
-            var workflowService = new WorkflowService( rockContext );
+            _workflowRockContext = new RockContext();
+            _workflowService = new WorkflowService( _workflowRockContext );
 
             // If operating against an existing workflow, get the workflow and load attributes
             if ( !WorkflowId.HasValue )
@@ -344,7 +353,7 @@ namespace RockWeb.Blocks.WorkFlow
                     Guid guid = PageParameter( PageParameterKey.WorkflowGuid ).AsGuid();
                     if ( !guid.IsEmpty() )
                     {
-                        _workflow = workflowService.Queryable()
+                        _workflow = _workflowService.Queryable()
                             .Where( w => w.Guid.Equals( guid ) && w.WorkflowTypeId == workflowType.Id )
                             .FirstOrDefault();
                         if ( _workflow != null )
@@ -359,7 +368,7 @@ namespace RockWeb.Blocks.WorkFlow
             {
                 if ( _workflow == null )
                 {
-                    _workflow = workflowService.Queryable()
+                    _workflow = _workflowService.Queryable()
                         .Where( w => w.Id == WorkflowId.Value && w.WorkflowTypeId == workflowType.Id )
                         .FirstOrDefault();
                 }
@@ -394,14 +403,14 @@ namespace RockWeb.Blocks.WorkFlow
                     int? personId = PageParameter( PageParameterKey.PersonId ).AsIntegerOrNull();
                     if ( personId.HasValue )
                     {
-                        entity = new PersonService( rockContext ).Get( personId.Value );
+                        entity = new PersonService( _workflowRockContext ).Get( personId.Value );
                     }
                     else
                     {
                         int? groupId = PageParameter( PageParameterKey.GroupId ).AsIntegerOrNull();
                         if ( groupId.HasValue )
                         {
-                            entity = new GroupService( rockContext ).Get( groupId.Value );
+                            entity = new GroupService( _workflowRockContext ).Get( groupId.Value );
                         }
                     }
 
@@ -416,7 +425,7 @@ namespace RockWeb.Blocks.WorkFlow
                     }
 
                     List<string> errorMessages;
-                    if ( !workflowService.Process( _workflow, entity, out errorMessages ) )
+                    if ( !_workflowService.Process( _workflow, entity, out errorMessages ) )
                     {
                         ShowNotes( false );
                         ShowMessage(
@@ -477,10 +486,11 @@ namespace RockWeb.Blocks.WorkFlow
 
                 if ( !canEdit )
                 {
-                    // if user isn't authorized to edit, limit to ones that are any of the following conditions
+                    /* if user isn't authorized to edit, limit to ones that are any of the following conditions
                     // - Not assigned
                     // - Assigned to current person
                     // - Assigned to a group that the current user is a member of
+                    */
 
                     activeWorkflowActivitiesList = activeWorkflowActivitiesList.Where( a =>
                     {
@@ -535,10 +545,7 @@ namespace RockWeb.Blocks.WorkFlow
             {
                 if ( GetAttributeValue( AttributeKey.ShowSummaryView ).AsBoolean() && !string.IsNullOrWhiteSpace( workflowType.SummaryViewText ) )
                 {
-                    var mergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields( this.RockPage, this.CurrentPerson );
-                    mergeFields.Add( "Action", _action );
-                    mergeFields.Add( "Activity", _activity );
-                    mergeFields.Add( "Workflow", _workflow );
+                    Dictionary<string, object> mergeFields = GetWorkflowEntryMergeFields();
 
                     lSummary.Text = workflowType.SummaryViewText.ResolveMergeFields( mergeFields, CurrentPerson );
                     lSummary.Visible = true;
@@ -553,16 +560,26 @@ namespace RockWeb.Blocks.WorkFlow
                 }
                 else
                 {
-                    var mergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields( this.RockPage, this.CurrentPerson );
-                    mergeFields.Add( "Action", _action );
-                    mergeFields.Add( "Activity", _activity );
-                    mergeFields.Add( "Workflow", _workflow );
+                    Dictionary<string, object> mergeFields = GetWorkflowEntryMergeFields();
                     ShowMessage( NotificationBoxType.Warning, string.Empty, workflowType.NoActionMessage.ResolveMergeFields( mergeFields, CurrentPerson ) );
                 }
             }
 
             ShowNotes( false );
             return false;
+        }
+
+        /// <summary>
+        /// Gets the workflow entry merge fields.
+        /// </summary>
+        /// <returns></returns>
+        private Dictionary<string, object> GetWorkflowEntryMergeFields()
+        {
+            var mergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields( this.RockPage, this.CurrentPerson );
+            mergeFields.Add( "Action", _action );
+            mergeFields.Add( "Activity", _activity );
+            mergeFields.Add( "Workflow", _workflow );
+            return mergeFields;
         }
 
         /// <summary>
@@ -624,10 +641,7 @@ namespace RockWeb.Blocks.WorkFlow
         /// <param name="setValues">if set to <c>true</c> [set values].</param>
         private void BuildWorkflowActionForm( bool setValues )
         {
-            var mergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields( this.RockPage, this.CurrentPerson );
-            mergeFields.Add( "Action", _action );
-            mergeFields.Add( "Activity", _activity );
-            mergeFields.Add( "Workflow", _workflow );
+            Dictionary<string, object> mergeFields = GetWorkflowEntryMergeFields();
 
             var form = _actionType.WorkflowForm;
 
@@ -662,15 +676,16 @@ namespace RockWeb.Blocks.WorkFlow
                 }
 
                 var attribute = AttributeCache.Get( formAttribute.AttributeId );
-                
+
                 string value = attribute.DefaultValue;
                 if ( _workflow != null && _workflow.AttributeValues.ContainsKey( attribute.Key ) && _workflow.AttributeValues[attribute.Key] != null )
                 {
+                    // if the key is in the workflow's attributes get the value from that
                     value = _workflow.AttributeValues[attribute.Key].Value;
                 }
-                // Now see if the key is in the activity attributes so we can get it's value
                 else if ( _activity != null && _activity.AttributeValues.ContainsKey( attribute.Key ) && _activity.AttributeValues[attribute.Key] != null )
                 {
+                    // if the key is in the activity's attributes get the value from that
                     value = _activity.AttributeValues[attribute.Key].Value;
                 }
 
@@ -836,22 +851,44 @@ namespace RockWeb.Blocks.WorkFlow
             SetPersonEditorOptions( pePerson2, form );
             pePerson2.PersonLabelPrefix = form.PersonEntrySpouseLabel;
             cbShowPerson2.Text = string.Format( "Show {0}", form.PersonEntrySpouseLabel );
-            if ( form.PersonEntrySpouseEntryOption == WorkflowActionFormPersonEntryOption.Required )
+            switch ( form.PersonEntrySpouseEntryOption )
             {
-                // if Spouse is required, don't show the option to show/hide spouse
-                cbShowPerson2.Checked = true;
-                cbShowPerson2.Visible = false;
+                case WorkflowActionFormPersonEntryOption.Required:
+                    {
+                        // if Spouse is required, don't show the option to show/hide spouse, an have the Spouse entry be visible
+                        cbShowPerson2.Checked = true;
+                        cbShowPerson2.Visible = false;
+                        break;
+                    }
+
+                case WorkflowActionFormPersonEntryOption.Optional:
+                    {
+                        // if Spouse is enabled, show the option to show/hide spouse
+                        cbShowPerson2.Visible = true;
+                        break;
+                    }
+
+                case WorkflowActionFormPersonEntryOption.Hidden:
+                default:
+                    {
+                        cbShowPerson2.Visible = false;
+                        break;
+                    }
             }
 
-            cbShowPerson2.Visible = form.PersonEntrySpouseEntryOption == WorkflowActionFormPersonEntryOption.Enabled;
+            dvpMaritalStatus.DefinedTypeId = DefinedTypeCache.GetId( Rock.SystemGuid.DefinedType.PERSON_MARITAL_STATUS.AsGuid() );
+            dvpMaritalStatus.Required = form.PersonEntryMaritalStatusEntryOption == WorkflowActionFormPersonEntryOption.Required;
+            dvpMaritalStatus.Visible = form.PersonEntryMaritalStatusEntryOption != WorkflowActionFormPersonEntryOption.Hidden;
 
             if ( setValues )
             {
-                pePerson2.Visible = form.PersonEntrySpouseEntryOption != WorkflowActionFormPersonEntryOption.Hidden && cbShowPerson2.Checked;
+                SetPerson2Visibility( cbShowPerson2.Checked );
             }
 
-            dvpMaritalStatus.Required = form.PersonEntryMaritalStatusEntryOption == WorkflowActionFormPersonEntryOption.Required;
-            dvpMaritalStatus.Visible = form.PersonEntryMaritalStatusEntryOption != WorkflowActionFormPersonEntryOption.Hidden;
+            if ( cbShowPerson2.Checked )
+            {
+                dvpMaritalStatus.Visible = false;
+            }
 
             var promptForAddress = ( form.PersonEntryAddressEntryOption != WorkflowActionFormPersonEntryOption.Hidden ) && form.PersonEntryGroupLocationTypeValueId.HasValue;
             acPersonEntryAddress.Required = form.PersonEntryAddressEntryOption == WorkflowActionFormPersonEntryOption.Required;
@@ -864,11 +901,20 @@ namespace RockWeb.Blocks.WorkFlow
             {
                 cpPersonEntryCampus.SetValue( CurrentPerson.PrimaryCampusId );
                 pePerson1.SetFromPerson( CurrentPerson );
-                var spouse = CurrentPerson.GetSpouse();
-                if ( pePerson2.Visible )
+                if ( form.PersonEntrySpouseEntryOption != WorkflowActionFormPersonEntryOption.Hidden )
                 {
-                    pePerson2.SetFromPerson( spouse );
+                    var spouse = CurrentPerson.GetSpouse();
+                    if ( spouse != null )
+                    {
+                        pePerson2.SetFromPerson( spouse );
+                    }
+                    else
+                    {
+                        pePerson2.SetFromPerson( null );
+                    }
                 }
+
+                dvpMaritalStatus.SetValue( CurrentPerson.MaritalStatusValueId );
 
                 if ( promptForAddress )
                 {
@@ -888,6 +934,18 @@ namespace RockWeb.Blocks.WorkFlow
                         {
                             acPersonEntryAddress.SetValues( null );
                         }
+                    }
+                }
+            }
+            else
+            {
+                // not using the current person, so initialize with a null person 
+                if ( setValues )
+                {
+                    pePerson1.SetFromPerson( null );
+                    if ( pePerson2.Visible )
+                    {
+                        pePerson2.SetFromPerson( null );
                     }
                 }
             }
@@ -935,7 +993,29 @@ namespace RockWeb.Blocks.WorkFlow
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void cbShowPerson2_CheckedChanged( object sender, EventArgs e )
         {
-            pePerson2.Visible = cbShowPerson2.Checked;
+            SetPerson2Visibility( cbShowPerson2.Checked );
+        }
+
+        /// <summary>
+        /// Sets the person2 visibility.
+        /// </summary>
+        private void SetPerson2Visibility( bool showPerson2 )
+        {
+            pePerson2.Visible = showPerson2;
+
+            /* TODO
+            if ( showPerson2 || AlwaysHideMaritalStatusPrompt )
+            {
+                // if prompting for a spouse, don't show the marital status option
+                // If adding/editing a spouse, MaritalStatus will be set to Married
+                dvpMaritalStatus.Visible = false;
+            }
+            else
+            {
+                var form = _actionType.WorkflowForm;
+                dvpMaritalStatus.Visible = form.PersonEntryMaritalStatusEntryOption != WorkflowActionFormPersonEntryOption.Hidden;
+            }
+            */
         }
 
         /// <summary>
@@ -961,7 +1041,7 @@ namespace RockWeb.Blocks.WorkFlow
         /// <summary>
         /// Gets the workflow form person entry values.
         /// </summary>
-        private void GetWorkflowFormPersonEntryValues()
+        private void GetWorkflowFormPersonEntryValues( RockContext personEntryRockContext )
         {
             if ( _workflow == null || _actionType == null )
             {
@@ -981,15 +1061,13 @@ namespace RockWeb.Blocks.WorkFlow
                 return;
             }
 
-            var rockContext = new RockContext();
-
             int? existingPersonId;
             int? existingPersonSpouseId = null;
 
             if ( CurrentPersonId.HasValue && ( form.PersonEntryAutofillCurrentPerson || form.PersonEntryHideIfCurrentPersonKnown ) )
             {
                 existingPersonId = CurrentPersonId.Value;
-                var existingPersonSpouse = CurrentPerson.GetSpouse( rockContext );
+                var existingPersonSpouse = CurrentPerson.GetSpouse( personEntryRockContext );
                 if ( existingPersonSpouse != null )
                 {
                     existingPersonSpouseId = existingPersonSpouse.Id;
@@ -1008,12 +1086,12 @@ namespace RockWeb.Blocks.WorkFlow
 
             var attemptMatchForPerson = true;
 
-            var personEntryPerson = CreateOrUpdatePersonFromPersonEditor( existingPersonId, attemptMatchForPerson, pePerson1, rockContext );
+            var personEntryPerson = CreateOrUpdatePersonFromPersonEditor( existingPersonId, attemptMatchForPerson, pePerson1, personEntryRockContext );
             if ( personEntryPerson.Id == 0 )
             {
                 personEntryPerson.ConnectionStatusValueId = form.PersonEntryConnectionStatusValueId;
                 personEntryPerson.RecordStatusValueId = form.PersonEntryRecordStatusValueId;
-                PersonService.SaveNewPerson( personEntryPerson, rockContext, cpPersonEntryCampus.SelectedCampusId );
+                PersonService.SaveNewPerson( personEntryPerson, personEntryRockContext, cpPersonEntryCampus.SelectedCampusId );
             }
 
             if ( form.PersonEntryMaritalStatusEntryOption != WorkflowActionFormPersonEntryOption.Hidden )
@@ -1022,14 +1100,14 @@ namespace RockWeb.Blocks.WorkFlow
             }
 
             // save person 1 to database and re-fetch to get any newly created family, or other things that would happen on PreSave changes, etc
-            rockContext.SaveChanges();
+            personEntryRockContext.SaveChanges();
 
-            var personAliasService = new PersonAliasService( rockContext );
+            var personAliasService = new PersonAliasService( personEntryRockContext );
 
             int personEntryPersonId = personEntryPerson.Id;
             int? personEntryPersonSpouseId = null;
 
-            var personService = new PersonService( rockContext );
+            var personService = new PersonService( personEntryRockContext );
             var primaryFamily = personService.GetSelect( personEntryPersonId, s => s.PrimaryFamily );
 
             // if the person doesn't have an existing spouse, just create a new spouse. Don't attempt to find a spouse for them.
@@ -1037,22 +1115,20 @@ namespace RockWeb.Blocks.WorkFlow
             if ( pePerson2.Visible )
             {
                 var attemptMatchForSpouse = false;
-                var personEntryPersonSpouse = CreateOrUpdatePersonFromPersonEditor( existingPersonSpouseId, attemptMatchForSpouse, pePerson2, rockContext );
+                var personEntryPersonSpouse = CreateOrUpdatePersonFromPersonEditor( existingPersonSpouseId, attemptMatchForSpouse, pePerson2, personEntryRockContext );
                 if ( personEntryPersonSpouse.Id == 0 )
                 {
                     personEntryPersonSpouse.ConnectionStatusValueId = form.PersonEntryConnectionStatusValueId;
                     personEntryPersonSpouse.RecordStatusValueId = form.PersonEntryRecordStatusValueId;
 
-                    PersonService.AddPersonToFamily( personEntryPersonSpouse, true, primaryFamily.Id, pePerson2.PersonGroupRoleId, rockContext );
+                    // if adding/editing a spouse, set both people to married
+                    personEntryPersonSpouse.MaritalStatusValueId = DefinedValueCache.GetId( Rock.SystemGuid.DefinedValue.PERSON_MARITAL_STATUS_MARRIED.AsGuid() );
+                    personEntryPerson.MaritalStatusValueId = DefinedValueCache.GetId( Rock.SystemGuid.DefinedValue.PERSON_MARITAL_STATUS_MARRIED.AsGuid() );
+
+                    PersonService.AddPersonToFamily( personEntryPersonSpouse, true, primaryFamily.Id, pePerson2.PersonGroupRoleId, personEntryRockContext );
                 }
 
-
-                if ( form.PersonEntryMaritalStatusEntryOption != WorkflowActionFormPersonEntryOption.Hidden )
-                {
-                    personEntryPersonSpouse.MaritalStatusValueId = dvpMaritalStatus.SelectedDefinedValueId;
-                }
-
-                rockContext.SaveChanges();
+                personEntryRockContext.SaveChanges();
 
                 personEntryPersonSpouseId = personEntryPersonSpouse.Id;
             }
@@ -1069,10 +1145,10 @@ namespace RockWeb.Blocks.WorkFlow
                 // a Person should always have a PrimaryFamilyId, but check to make sure, just in case 
                 if ( primaryFamily != null )
                 {
-                    var groupLocationService = new GroupLocationService( rockContext );
+                    var groupLocationService = new GroupLocationService( personEntryRockContext );
                     var familyLocation = primaryFamily.GroupLocations.Where( a => a.GroupLocationTypeValueId == form.PersonEntryGroupLocationTypeValueId.Value ).FirstOrDefault();
 
-                    var newOrExistingLocation = new LocationService( rockContext ).Get(
+                    var newOrExistingLocation = new LocationService( personEntryRockContext ).Get(
                             acPersonEntryAddress.Street1,
                             acPersonEntryAddress.Street2,
                             acPersonEntryAddress.City,
@@ -1103,7 +1179,7 @@ namespace RockWeb.Blocks.WorkFlow
                 }
             }
 
-            rockContext.SaveChanges();
+            personEntryRockContext.SaveChanges();
         }
 
         /// <summary>
@@ -1247,7 +1323,6 @@ namespace RockWeb.Blocks.WorkFlow
                         item.SetAttributeValue( attribute.Key, attribute.FieldType.Field.GetEditValue( attribute.GetControl( control ), attribute.QualifierValues ) );
                     }
                 }
-
             }
         }
 
@@ -1267,10 +1342,7 @@ namespace RockWeb.Blocks.WorkFlow
                 return;
             }
 
-            var mergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields( this.RockPage, this.CurrentPerson );
-            mergeFields.Add( "Action", _action );
-            mergeFields.Add( "Activity", _activity );
-            mergeFields.Add( "Workflow", _workflow );
+            var mergeFields = GetWorkflowEntryMergeFields();
 
             Guid activityTypeGuid = Guid.Empty;
             string responseText = "Your information has been submitted successfully.";
@@ -1336,12 +1408,9 @@ namespace RockWeb.Blocks.WorkFlow
                 System.Threading.Thread.Sleep( 1 );
             }
 
-            var rockContext = new RockContext();
-            var workflowService = new WorkflowService( rockContext );
-
             List<string> errorMessages;
 
-            var workflowProcessSuccess = workflowService.Process( _workflow, out errorMessages );
+            var workflowProcessSuccess = _workflowService.Process( _workflow, out errorMessages );
 
             if ( _workflow.Id != 0 )
             {
@@ -1356,7 +1425,6 @@ namespace RockWeb.Blocks.WorkFlow
                     "<ul><li>" + errorMessages.AsDelimited( "</li><li>", null, true ) + "</li></ul>" );
                 return;
             }
-
 
             Guid? previousActionGuid = null;
 
@@ -1375,7 +1443,7 @@ namespace RockWeb.Blocks.WorkFlow
             if ( hydrateObjectsResult && _action != null && _action.Guid != previousActionGuid )
             {
                 // The block reloads the page with the workflow IDs as a parameter. At this point the workflow must be persisted regardless of user settings in order for the workflow to work.
-                workflowService.PersistImmediately( _action );
+                _workflowService.PersistImmediately( _action );
 
                 // If we are already being directed (presumably from the Redirect Action), don't redirect again.
                 if ( !Response.IsRequestBeingRedirected )
