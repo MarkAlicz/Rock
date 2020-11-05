@@ -395,58 +395,56 @@ namespace RockWeb.Blocks.WorkFlow
                 }
 
                 _workflow = Rock.Model.Workflow.Activate( workflowType, workflowName );
-                if ( _workflow != null )
+
+                if ( _workflow == null )
                 {
-                    // If a PersonId or GroupId parameter was included, load the corresponding
-                    // object and pass that to the actions for processing
-                    object entity = null;
-                    int? personId = PageParameter( PageParameterKey.PersonId ).AsIntegerOrNull();
-                    if ( personId.HasValue )
-                    {
-                        entity = new PersonService( _workflowRockContext ).Get( personId.Value );
-                    }
-                    else
-                    {
-                        int? groupId = PageParameter( PageParameterKey.GroupId ).AsIntegerOrNull();
-                        if ( groupId.HasValue )
-                        {
-                            entity = new GroupService( _workflowRockContext ).Get( groupId.Value );
-                        }
-                    }
+                    ShowNotes( false );
+                    ShowMessage( NotificationBoxType.Danger, "Workflow Activation Error", "Workflow could not be activated." );
+                    return false;
+                }
 
-                    // Loop through all the query string parameters and try to set any workflow
-                    // attributes that might have the same key
-                    foreach ( var param in RockPage.PageParameters() )
+                // If a PersonId or GroupId parameter was included, load the corresponding
+                // object and pass that to the actions for processing
+                IEntity entity = null;
+                int? personId = PageParameter( PageParameterKey.PersonId ).AsIntegerOrNull();
+                if ( personId.HasValue )
+                {
+                    entity = new PersonService( _workflowRockContext ).Get( personId.Value );
+                }
+                else
+                {
+                    int? groupId = PageParameter( PageParameterKey.GroupId ).AsIntegerOrNull();
+                    if ( groupId.HasValue )
                     {
-                        if ( param.Value != null && param.Value.ToString().IsNotNullOrWhiteSpace() )
-                        {
-                            _workflow.SetAttributeValue( param.Key, param.Value.ToString() );
-                        }
-                    }
-
-                    List<string> errorMessages;
-                    if ( !_workflowService.Process( _workflow, entity, out errorMessages ) )
-                    {
-                        ShowNotes( false );
-                        ShowMessage(
-                            NotificationBoxType.Danger,
-                            "Workflow Processing Error(s):",
-                            "<ul><li>" + errorMessages.AsDelimited( "</li><li>" ) + "</li></ul>" );
-                        return false;
-                    }
-
-                    if ( _workflow.Id != 0 )
-                    {
-                        WorkflowId = _workflow.Id;
+                        entity = new GroupService( _workflowRockContext ).Get( groupId.Value );
                     }
                 }
-            }
 
-            if ( _workflow == null )
-            {
-                ShowNotes( false );
-                ShowMessage( NotificationBoxType.Danger, "Workflow Activation Error", "Workflow could not be activated." );
-                return false;
+                // Loop through all the query string parameters and try to set any workflow
+                // attributes that might have the same key
+                foreach ( var param in RockPage.PageParameters() )
+                {
+                    if ( param.Value != null && param.Value.ToString().IsNotNullOrWhiteSpace() )
+                    {
+                        _workflow.SetAttributeValue( param.Key, param.Value.ToString() );
+                    }
+                }
+
+                List<string> errorMessages;
+                if ( !_workflowService.Process( _workflow, entity, out errorMessages ) )
+                {
+                    ShowNotes( false );
+                    ShowMessage(
+                        NotificationBoxType.Danger,
+                        "Workflow Processing Error(s):",
+                        "<ul><li>" + errorMessages.AsDelimited( "</li><li>" ) + "</li></ul>" );
+                    return false;
+                }
+
+                if ( _workflow.Id != 0 )
+                {
+                    WorkflowId = _workflow.Id;
+                }
             }
 
             var canEdit = UserCanEdit || _workflow.IsAuthorized( Authorization.EDIT, CurrentPerson );
@@ -703,7 +701,7 @@ namespace RockWeb.Blocks.WorkFlow
                     // get formatted value 
                     if ( attribute.FieldType.Class == typeof( Rock.Field.Types.ImageFieldType ).FullName )
                     {
-                        formattedValue = attribute.FieldType.Field.FormatValueAsHtml( phAttributes, attribute.EntityTypeId, _activity.Id, value, attribute.QualifierValues, true );
+                        formattedValue = field.FormatValueAsHtml( phAttributes, attribute.EntityTypeId, _activity.Id, value, attribute.QualifierValues, true );
                     }
                     else
                     {
@@ -1128,7 +1126,9 @@ namespace RockWeb.Blocks.WorkFlow
             else
             {
                 existingPersonId = pePerson1.PersonId;
-            }   existingPersonSpouseId = pePerson2.PersonId;
+            }
+
+            existingPersonSpouseId = pePerson2.PersonId;
 
             var attemptMatchForPerson = true;
 
