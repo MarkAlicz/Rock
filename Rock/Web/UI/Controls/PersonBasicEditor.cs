@@ -513,7 +513,16 @@ namespace Rock.Web.UI.Controls
             get
             {
                 EnsureChildControls();
-                return _rblPersonRole.SelectedValue.AsInteger();
+                var selectedRoleId = _rblPersonRole.SelectedValue.AsInteger();
+                if ( selectedRoleId == 0 )
+                {
+                    var adultRoleId = GroupTypeCache.GetFamilyGroupType().Roles.FirstOrDefault( r => r.Guid == Rock.SystemGuid.GroupRole.GROUPROLE_FAMILY_MEMBER_ADULT.AsGuid() ).Id;
+                    return adultRoleId;
+                }
+                else
+                {
+                    return selectedRoleId;
+                }
             }
 
             set

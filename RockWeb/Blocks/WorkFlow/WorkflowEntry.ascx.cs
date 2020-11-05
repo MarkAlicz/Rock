@@ -900,19 +900,17 @@ namespace RockWeb.Blocks.WorkFlow
             {
                 cpPersonEntryCampus.SetValue( CurrentPerson.PrimaryCampusId );
                 pePerson1.SetFromPerson( CurrentPerson );
+
+                var spouse = CurrentPerson.GetSpouse();
+                if ( spouse != null )
+                {
+                    // don't show marital status if person has a spouse
+                    dvpMaritalStatus.Visible = false;
+                }
+
                 if ( form.PersonEntrySpouseEntryOption != WorkflowActionFormPersonEntryOption.Hidden )
                 {
-                    var spouse = CurrentPerson.GetSpouse();
-                    if ( spouse != null )
-                    {
-                        // don't show marital status if person has a spouse
-                        dvpMaritalStatus.Visible = false;
-                        pePerson2.SetFromPerson( spouse );
-                    }
-                    else
-                    {
-                        pePerson2.SetFromPerson( null );
-                    }
+                    pePerson2.SetFromPerson( spouse );
                 }
 
                 dvpMaritalStatus.SetValue( CurrentPerson.MaritalStatusValueId );
@@ -1151,7 +1149,7 @@ namespace RockWeb.Blocks.WorkFlow
                 primaryFamily.CampusId = cpPersonEntryCampus.SelectedCampusId;
             }
 
-            if ( acPersonEntryAddress.Visible && form.PersonEntryGroupLocationTypeValueId.HasValue )
+            if ( acPersonEntryAddress.Visible && form.PersonEntryGroupLocationTypeValueId.HasValue && acPersonEntryAddress.HasValue )
             {
                 // a Person should always have a PrimaryFamilyId, but check to make sure, just in case 
                 if ( primaryFamily != null )
