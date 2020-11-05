@@ -165,7 +165,24 @@ namespace Rock.Bus
 
             _bus = _transportComponent.GetBusControl( RockConsumer.ConfigureRockConsumers );
 
-            await _bus.StartAsync();
+            // Allow the bus to try to connect for some seconds at most
+            var task = _bus.StartAsync();
+            var secondsToWait = 15;
+
+            if ( await Task.WhenAny( task, Task.Delay( TimeSpan.FromSeconds( secondsToWait ) ) ) == task )
+            {
+                // Task completed within timeout.
+                // Consider that the task may have faulted or been canceled.
+                // We re-await the task so that any exceptions/cancellation is rethrown.
+                // https://stackoverflow.com/a/11191070/13215483
+                await task;
+            }
+            else
+            {
+                // The bus did not connect after some seconds
+                throw new ConfigurationException( $"The bus failed to connect using {_transportComponent.GetType().Name} within {secondsToWait} seconds" );
+            }
+
             _isBusStarted = true;
         }
 

@@ -30,6 +30,7 @@ using DotLiquid;
 using Quartz;
 using Quartz.Impl;
 using Quartz.Impl.Matchers;
+using Rock.Bus;
 using Rock.Configuration;
 using Rock.Data;
 using Rock.Jobs;
@@ -78,6 +79,10 @@ namespace Rock.WebStartup
             StartDateTime = RockDateTime.Now;
 
             RockApplicationStartupHelper.LogStartupMessage( "Application Starting" );
+
+            // Start the message bus
+            ShowDebugTimingMessage( "Message bus" );
+            RockMessageBus.StartAsync().Wait();
 
             var runMigrationFileInfo = new FileInfo( System.IO.Path.Combine( AppDomain.CurrentDomain.BaseDirectory, "App_Data\\Run.Migration" ) );
 
