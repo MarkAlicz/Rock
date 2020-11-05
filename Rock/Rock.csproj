@@ -556,6 +556,7 @@
     <Compile Include="Bulk\BulkImport\InteractionImport.cs" />
     <Compile Include="Bus\Consumer\RockConsumer.cs" />
     <Compile Include="Bus\Consumer\RockDebugConsumer.cs" />
+    <Compile Include="Bus\Message\WebFarmWasUpdatedMessage.cs" />
     <Compile Include="Bus\Message\IEventMessage.cs" />
     <Compile Include="Bus\Message\ICommandMessage.cs" />
     <Compile Include="Bus\Message\CacheWasUpdatedMessage.cs" />
@@ -563,6 +564,7 @@
     <Compile Include="Bus\Message\RockMessage.cs" />
     <Compile Include="Bus\Message\EntityWasUpdatedMessage.cs" />
     <Compile Include="Bus\Queue\CacheEventQueue.cs" />
+    <Compile Include="Bus\Queue\WebFarmQueue.cs" />
     <Compile Include="Bus\Queue\PublishEventQueue.cs" />
     <Compile Include="Bus\Queue\SendCommandQueue.cs" />
     <Compile Include="Bus\Queue\StartTaskQueue.cs" />
@@ -722,6 +724,8 @@
     <Compile Include="Utility\Settings\RockInstanceDatabaseConfiguration.cs" />
     <Compile Include="Utility\TimeInterval.cs" />
     <Compile Include="Utility\TimeIntervalSetting.cs" />
+    <Compile Include="WebFarm\IntervalAction.cs" />
+    <Compile Include="WebFarm\MessageBusConsumer.cs" />
     <Compile Include="WebFarm\RockWebFarm.cs" />
     <Compile Include="Web\Cache\Entities\BinaryFileTypeCache.cs" />
     <Compile Include="Web\Cache\Entities\StepTypeCache.cs" />

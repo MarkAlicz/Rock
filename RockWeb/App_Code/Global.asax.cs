@@ -39,6 +39,7 @@ using Rock.Transactions;
 using Rock.Utility;
 using Rock.Web.Cache;
 using Rock.Web.UI;
+using Rock.WebFarm;
 using Rock.WebStartup;
 
 namespace RockWeb
@@ -195,12 +196,6 @@ namespace RockWeb
                 }
 
                 ExceptionLogService.AlwaysLogToFile = false;
-
-                // Start the Rock Message Bus
-                RockMessageBus.StartAsync().Wait();
-
-                // Start the web farm
-                RockWebFarm.Start();
             }
             catch ( Exception ex )
             {

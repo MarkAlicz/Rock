@@ -81,8 +81,7 @@ namespace Rock.Model
         /// <value>
         /// The message.
         /// </value>
-        [DataMember( IsRequired = true )]
-        [Required]
+        [DataMember]
         public string Message { get; set; }
 
         #endregion Entity Properties

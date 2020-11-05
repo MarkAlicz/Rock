@@ -38,7 +38,7 @@ namespace Rock.Migrations
                         WriterWebFarmNodeId = c.Int(nullable: false),
                         EventType = c.String(nullable: false, maxLength: 50),
                         EventDateTime = c.DateTime(nullable: false),
-                        Message = c.String(nullable: false),
+                        Message = c.String(),
                         CreatedDateTime = c.DateTime(),
                         ModifiedDateTime = c.DateTime(),
                         CreatedByPersonAliasId = c.Int(),
@@ -87,6 +87,8 @@ namespace Rock.Migrations
                 .PrimaryKey(t => t.Id)
                 .ForeignKey("dbo.PersonAlias", t => t.CreatedByPersonAliasId)
                 .ForeignKey("dbo.PersonAlias", t => t.ModifiedByPersonAliasId)
+                .Index(t => t.NodeName, unique: true)
+                .Index(t => t.CurrentLeadershipPollingIntervalSeconds, unique: true)
                 .Index(t => t.CreatedByPersonAliasId)
                 .Index(t => t.ModifiedByPersonAliasId)
                 .Index(t => t.Guid, unique: true);
@@ -136,6 +138,8 @@ namespace Rock.Migrations
             DropIndex("dbo.WebFarmNode", new[] { "Guid" });
             DropIndex("dbo.WebFarmNode", new[] { "ModifiedByPersonAliasId" });
             DropIndex("dbo.WebFarmNode", new[] { "CreatedByPersonAliasId" });
+            DropIndex("dbo.WebFarmNode", new[] { "CurrentLeadershipPollingIntervalSeconds" });
+            DropIndex("dbo.WebFarmNode", new[] { "NodeName" });
             DropIndex("dbo.WebFarmNodeLog", new[] { "Guid" });
             DropIndex("dbo.WebFarmNodeLog", new[] { "ModifiedByPersonAliasId" });
             DropIndex("dbo.WebFarmNodeLog", new[] { "CreatedByPersonAliasId" });
