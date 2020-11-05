@@ -317,7 +317,7 @@ namespace Rock.WebFarm
                 return;
             }
 
-            Debug( "OnPing" );
+            Debug( $"Got a Ping from {senderNodeName}" );
             _wasPinged = true;
 
             // Reply to the leader (sender of the ping)
@@ -343,7 +343,7 @@ namespace Rock.WebFarm
                 return;
             }
 
-            Debug( "OnPong" );
+            Debug( $"Got a Pong from {senderNodeName}" );
 
             using ( var rockContext = new RockContext() )
             {
