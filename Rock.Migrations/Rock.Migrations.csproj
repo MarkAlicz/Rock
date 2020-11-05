@@ -193,17 +193,17 @@
     <Compile Include="Migrations\202010142325229_AddCheckInManagerApp.Designer.cs">
       <DependentUpon>202010142325229_AddCheckInManagerApp.cs</DependentUpon>
     </Compile>
-    <Compile Include="Migrations\202010271845214_WorkflowActionFormAllowPersonEntry.cs" />
-    <Compile Include="Migrations\202010271845214_WorkflowActionFormAllowPersonEntry.Designer.cs">
-      <DependentUpon>202010271845214_WorkflowActionFormAllowPersonEntry.cs</DependentUpon>
+    <Compile Include="Migrations\202010272130222_Rollup_1027.cs" />
+    <Compile Include="Migrations\202010272130222_Rollup_1027.Designer.cs">
+      <DependentUpon>202010272130222_Rollup_1027.cs</DependentUpon>
     </Compile>
-    <Compile Include="Migrations\202010272358072_WorkflowActionFormAllowPersonEntry2.cs" />
-    <Compile Include="Migrations\202010272358072_WorkflowActionFormAllowPersonEntry2.Designer.cs">
-      <DependentUpon>202010272358072_WorkflowActionFormAllowPersonEntry2.cs</DependentUpon>
+    <Compile Include="Migrations\202010301403238_AddOfflineAccessClaim.cs" />
+    <Compile Include="Migrations\202010301403238_AddOfflineAccessClaim.Designer.cs">
+      <DependentUpon>202010301403238_AddOfflineAccessClaim.cs</DependentUpon>
     </Compile>
-    <Compile Include="Migrations\202010292303244_WorkflowActionFormAllowPersonEntry3.cs" />
-    <Compile Include="Migrations\202010292303244_WorkflowActionFormAllowPersonEntry3.Designer.cs">
-      <DependentUpon>202010292303244_WorkflowActionFormAllowPersonEntry3.cs</DependentUpon>
+    <Compile Include="Migrations\202011051623216_UpdateDocumentType.cs" />
+    <Compile Include="Migrations\202011051623216_UpdateDocumentType.Designer.cs">
+      <DependentUpon>202011051623216_UpdateDocumentType.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\Version 11.0\Version 1.11.0\202006231558281_PrayerRequestWorkflowAction.cs" />
     <Compile Include="Migrations\Version 11.0\Version 1.11.0\202006231558281_PrayerRequestWorkflowAction.Designer.cs">
@@ -1550,14 +1550,14 @@
     <EmbeddedResource Include="Migrations\202010142325229_AddCheckInManagerApp.resx">
       <DependentUpon>202010142325229_AddCheckInManagerApp.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202010271845214_WorkflowActionFormAllowPersonEntry.resx">
-      <DependentUpon>202010271845214_WorkflowActionFormAllowPersonEntry.cs</DependentUpon>
+    <EmbeddedResource Include="Migrations\202010272130222_Rollup_1027.resx">
+      <DependentUpon>202010272130222_Rollup_1027.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202010272358072_WorkflowActionFormAllowPersonEntry2.resx">
-      <DependentUpon>202010272358072_WorkflowActionFormAllowPersonEntry2.cs</DependentUpon>
+    <EmbeddedResource Include="Migrations\202010301403238_AddOfflineAccessClaim.resx">
+      <DependentUpon>202010301403238_AddOfflineAccessClaim.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202010292303244_WorkflowActionFormAllowPersonEntry3.resx">
-      <DependentUpon>202010292303244_WorkflowActionFormAllowPersonEntry3.cs</DependentUpon>
+    <EmbeddedResource Include="Migrations\202011051623216_UpdateDocumentType.resx">
+      <DependentUpon>202011051623216_UpdateDocumentType.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\Version 11.0\Version 1.11.0\202006231558281_PrayerRequestWorkflowAction.resx">
       <DependentUpon>202006231558281_PrayerRequestWorkflowAction.cs</DependentUpon>

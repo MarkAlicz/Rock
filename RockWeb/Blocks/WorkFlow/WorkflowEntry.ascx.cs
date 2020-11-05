@@ -764,6 +764,11 @@ namespace RockWeb.Blocks.WorkFlow
             }
 
             phActions.Controls.Clear();
+
+            var buttons = WorkflowActionFormUserAction.FromUriEncodedString( form.Actions );
+
+            foreach ( var button in buttons )
+            {
             foreach ( var action in form.Actions.Split( new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries ) )
             {
                 var actionParts = action.Split( new char[] { '^' } );
