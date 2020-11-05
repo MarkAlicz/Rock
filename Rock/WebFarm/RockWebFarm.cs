@@ -18,6 +18,7 @@
 using System;
 using System.Configuration;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Rock.Bus.Message;
 using Rock.Data;
@@ -35,7 +36,7 @@ namespace Rock.WebFarm
         /// <summary>
         /// Event Types
         /// </summary>
-        public static class EventType
+        internal static class EventType
         {
             /// <summary>
             /// Startup
@@ -71,6 +72,11 @@ namespace Rock.WebFarm
         /// Do debug logging
         /// </summary>
         private const bool DEBUG = true;
+
+        /// <summary>
+        /// The web farm enabled
+        /// </summary>
+        private static bool _webFarmEnabled = false;
 
         /// <summary>
         /// The start stage
@@ -114,10 +120,11 @@ namespace Rock.WebFarm
         {
             if ( _startStage != 0 )
             {
-                throw new Exception( $"Web Farm cannot start stage 1 when at stage {_startStage}" );
+                LogException( $"Web Farm cannot start stage 1 when at stage {_startStage}" );
+                return;
             }
 
-            Debug( $"Start Stage 1" );
+            Debug( "Start Stage 1" );
 
             using ( var rockContext = new RockContext() )
             {
@@ -136,12 +143,15 @@ namespace Rock.WebFarm
                     return;
                 }
 
+                _webFarmEnabled = true;
+
                 // Find node record in DB using node name, if not found create a new record
                 _nodeName = GetNodeName();
                 var webFarmNodeService = new WebFarmNodeService( rockContext );
                 var webFarmNode = webFarmNodeService.Queryable().FirstOrDefault( wfn => wfn.NodeName == _nodeName );
+                var isNewNode = webFarmNode == null;
 
-                if ( webFarmNode == null )
+                if ( isNewNode )
                 {
                     webFarmNode = new WebFarmNode
                     {
@@ -149,6 +159,7 @@ namespace Rock.WebFarm
                     };
 
                     webFarmNodeService.Add( webFarmNode );
+                    rockContext.SaveChanges();
                 }
 
                 _nodeId = webFarmNode.Id;
@@ -179,11 +190,12 @@ namespace Rock.WebFarm
 
                 if ( isPollingIntervalInUse )
                 {
-                    throw new Exception( $"Web farm node {_nodeName} did not successfully pick a polling interval after {maxGenerationAttempts} attempts" );
+                    LogException( $"Web farm node {_nodeName} did not successfully pick a polling interval after {maxGenerationAttempts} attempts" );
+                    return;
                 }
 
                 // If StoppedDateTime is currently null then write to ClusterNodeLog -"Detected previous abrupt shutdown on load."
-                if ( !webFarmNode.StoppedDateTime.HasValue )
+                if ( !isNewNode && !webFarmNode.StoppedDateTime.HasValue )
                 {
                     AddLog( rockContext, webFarmNode.Id, EventType.Warning, "Detected previous abrupt shutdown on load." );
                 }
@@ -206,7 +218,7 @@ namespace Rock.WebFarm
             }
 
             _startStage = 1;
-            Debug( $"Done with Stage 1" );
+            Debug( "Done with Stage 1" );
         }
 
         /// <summary>
@@ -215,12 +227,18 @@ namespace Rock.WebFarm
         /// </summary>
         public static void StartStage2()
         {
-            if ( _startStage != 1 )
+            if ( !_webFarmEnabled )
             {
-                throw new Exception( $"Web Farm cannot start stage 2 when at stage {_startStage}" );
+                return;
             }
 
-            Debug( $"Start Stage 2" );
+            if ( _startStage != 1 )
+            {
+                LogException( $"Web Farm cannot start stage 2 when at stage {_startStage}" );
+                return;
+            }
+
+            Debug( "Start Stage 2" );
 
             using ( var rockContext = new RockContext() )
             {
@@ -239,7 +257,7 @@ namespace Rock.WebFarm
             PublishEvent( EventType.Startup );
             _startStage = 2;
 
-            Debug( $"Done with Stage 2" );
+            Debug( "Done with Stage 2" );
         }
 
         /// <summary>
@@ -247,12 +265,18 @@ namespace Rock.WebFarm
         /// </summary>
         public static void Shutdown()
         {
-            if ( _startStage != 2 )
+            if ( !_webFarmEnabled )
             {
-                throw new Exception( $"Web Farm cannot shutdown properly when at stage {_startStage}" );
+                return;
             }
 
-            Debug( $"Shutdown" );
+            if ( _startStage != 2 )
+            {
+                LogException( $"Web Farm cannot shutdown properly when at stage {_startStage}" );
+                return;
+            }
+
+            Debug( "Shutdown" );
 
             // Stop the polling interval
             _pollingInterval.Stop();
@@ -285,7 +309,7 @@ namespace Rock.WebFarm
         /// Called when [ping].
         /// </summary>
         /// <param name="senderNodeName">Name of the node that pinged.</param>
-        public static void OnPing( string senderNodeName )
+        internal static void OnReceivedPing( string senderNodeName )
         {
             if ( senderNodeName == _nodeName )
             {
@@ -293,7 +317,7 @@ namespace Rock.WebFarm
                 return;
             }
 
-            Debug( $"OnPing" );
+            Debug( "OnPing" );
             _wasPinged = true;
 
             // Reply to the leader (sender of the ping)
@@ -305,7 +329,7 @@ namespace Rock.WebFarm
         /// </summary>
         /// <param name="senderNodeName">Name of the node that ponged.</param>
         /// <param name="recipientNodeName">Name of the recipient node.</param>
-        public static void OnPong( string senderNodeName, string recipientNodeName )
+        internal static void OnReceivedPong( string senderNodeName, string recipientNodeName )
         {
             if ( senderNodeName == _nodeName )
             {
@@ -313,13 +337,13 @@ namespace Rock.WebFarm
                 return;
             }
 
-            if ( recipientNodeName != _nodeName )
+            if ( !recipientNodeName.IsNullOrWhiteSpace() && recipientNodeName != _nodeName )
             {
                 // This message is not for me
                 return;
             }
 
-            Debug( $"OnPong" );
+            Debug( "OnPong" );
 
             using ( var rockContext = new RockContext() )
             {
@@ -339,17 +363,17 @@ namespace Rock.WebFarm
         /// <summary>
         /// Does the leadership poll.
         /// </summary>
-        public static async Task DoLeadershipPollAsync()
+        internal static async Task DoLeadershipPollAsync()
         {
             // If another node pinged this node, then that node is the leader, not this one
             if ( _wasPinged )
             {
-                Debug( $"I was pinged, I'm not the leader" );
+                Debug( "I was pinged, I'm not the leader" );
                 _wasPinged = false;
                 return;
             }
 
-            Debug( $"Starting leadership duty" );
+            Debug( "Starting leadership duty" );
             var pollingTime = RockDateTime.Now;
 
             // Assert this nodes leadership in the database
@@ -377,11 +401,16 @@ namespace Rock.WebFarm
             // Wait a maximum of 1 second for responses
             await Task.Delay( TimeSpan.FromSeconds( 1 ) ).ContinueWith( t =>
             {
+                Debug( "Checking for unresponsive nodes" );
+
                 using ( var rockContext = new RockContext() )
                 {
                     var webFarmNodeService = new WebFarmNodeService( rockContext );
                     var unresponsiveNodes = webFarmNodeService.Queryable()
-                        .Where( wfn => wfn.LastSeenDateTime < pollingTime && wfn.IsActive )
+                        .Where( wfn =>
+                            wfn.LastSeenDateTime < pollingTime &&
+                            wfn.IsActive &&
+                            wfn.NodeName != _nodeName )
                         .ToList();
 
                     foreach ( var node in unresponsiveNodes )
@@ -394,6 +423,34 @@ namespace Rock.WebFarm
                     rockContext.SaveChanges();
                 }
             } );
+        }
+
+        /// <summary>
+        /// Called when [received startup].
+        /// </summary>
+        /// <param name="senderNodeName">Name of the sender node.</param>
+        internal static void OnReceivedStartup( string senderNodeName )
+        {
+            Debug( $"{senderNodeName} started" );
+        }
+
+        /// <summary>
+        /// Called when [received shutdown].
+        /// </summary>
+        /// <param name="senderNodeName">Name of the sender node.</param>
+        internal static void OnReceivedShutdown( string senderNodeName )
+        {
+            Debug( $"{senderNodeName} shutdown" );
+        }
+
+        /// <summary>
+        /// Called when [received warning].
+        /// </summary>
+        /// <param name="senderNodeName">Name of the sender node.</param>
+        /// <param name="payload">The payload.</param>
+        internal static void OnReceivedWarning( string senderNodeName, string payload )
+        {
+            Debug( $"{senderNodeName} warned '{payload}'" );
         }
 
         #endregion Event Handlers
@@ -538,21 +595,51 @@ namespace Rock.WebFarm
         /// </summary>
         /// <param name="eventType">Type of the event.</param>
         /// <param name="recipientNodeName">Name of the recipient node. Omit if meant for all nodes.</param>
-        private static void PublishEvent( string eventType, string recipientNodeName = "" )
+        /// <param name="payload">The payload.</param>
+        private static void PublishEvent( string eventType, string recipientNodeName = "", string payload = "" )
         {
-            Debug( $"Sending {eventType} to {recipientNodeName}" );
-            WebFarmWasUpdatedMessage.Publish( _nodeName, eventType, recipientNodeName );
+            Debug( $"Sending {eventType} to {( recipientNodeName.IsNullOrWhiteSpace() ? "all" : recipientNodeName )}" );
+            WebFarmWasUpdatedMessage.Publish( _nodeName, eventType, recipientNodeName, payload );
+        }
+
+        /// <summary>
+        /// Logs the exception.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        /// <param name="callerMethod">The caller method.</param>
+        private static void LogException( string message, [CallerMemberName] string callerMethod = "" )
+        {
+            if ( !_nodeName.IsNullOrWhiteSpace() && !callerMethod.IsNullOrWhiteSpace() )
+            {
+                ExceptionLogService.LogException( $"Web Farm Exception ({_nodeName}) from {callerMethod}: {message}" );
+                return;
+            }
+
+            if ( !_nodeName.IsNullOrWhiteSpace() )
+            {
+                ExceptionLogService.LogException( $"Web Farm Exception ({_nodeName}): {message}" );
+                return;
+            }
+
+            if ( !callerMethod.IsNullOrWhiteSpace() )
+            {
+                ExceptionLogService.LogException( $"Web Farm Exception from {callerMethod}: {message}" );
+                return;
+            }
+
+            ExceptionLogService.LogException( $"Web Farm Exception: {message}" );
+            return;
         }
 
         /// <summary>
         /// Debugs the specified message.
         /// </summary>
         /// <param name="message">The message.</param>
-        private static void Debug(string message)
+        private static void Debug( string message )
         {
             if ( DEBUG )
             {
-                System.Diagnostics.Debug.WriteLine( $"{RockDateTime.Now.ToLongTimeString()} {message}" );
+                System.Diagnostics.Debug.WriteLine( $"\tFARM {RockDateTime.Now:mm.ss.f} {message}" );
             }
         }
 

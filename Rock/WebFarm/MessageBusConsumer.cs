@@ -36,10 +36,19 @@ namespace Rock.WebFarm
             switch ( message.MessageType )
             {
                 case RockWebFarm.EventType.Ping:
-                    RockWebFarm.OnPing( message.SenderNodeName );
+                    RockWebFarm.OnReceivedPing( message.SenderNodeName );
                     break;
                 case RockWebFarm.EventType.Pong:
-                    RockWebFarm.OnPong( message.SenderNodeName, message.RecipientNodeName );
+                    RockWebFarm.OnReceivedPong( message.SenderNodeName, message.RecipientNodeName );
+                    break;
+                case RockWebFarm.EventType.Startup:
+                    RockWebFarm.OnReceivedStartup( message.SenderNodeName );
+                    break;
+                case RockWebFarm.EventType.Shutdown:
+                    RockWebFarm.OnReceivedShutdown( message.SenderNodeName );
+                    break;
+                case RockWebFarm.EventType.Warning:
+                    RockWebFarm.OnReceivedWarning( message.SenderNodeName, message.Payload );
                     break;
                 default:
                     ExceptionLogService.LogException( $"Web farm received a message with an unexpected type: {message.MessageType}" );

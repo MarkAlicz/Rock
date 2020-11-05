@@ -22,7 +22,7 @@ namespace Rock.Bus.Message
     /// <summary>
     /// Web Farm Was Updated Message
     /// </summary>
-    public interface IWebFarmWasUpdatedMessage : IEventMessage<WebFarmQueue>
+    internal interface IWebFarmWasUpdatedMessage : IEventMessage<WebFarmQueue>
     {
         /// <summary>
         /// Gets the node name.
@@ -33,12 +33,20 @@ namespace Rock.Bus.Message
         /// Gets or sets the message.
         /// </summary>
         string MessageType { get; set; }
+
+        /// <summary>
+        /// Gets or sets the payload.
+        /// </summary>
+        /// <value>
+        /// The payload.
+        /// </value>
+        string Payload { get; set; }
     }
 
     /// <summary>
     /// Cache Update Message
     /// </summary>
-    public class WebFarmWasUpdatedMessage : IWebFarmWasUpdatedMessage
+    internal sealed class WebFarmWasUpdatedMessage : IWebFarmWasUpdatedMessage
     {
         /// <summary>
         /// Gets the node name.
@@ -56,18 +64,28 @@ namespace Rock.Bus.Message
         public string MessageType { get; set; }
 
         /// <summary>
+        /// Gets or sets the payload.
+        /// </summary>
+        /// <value>
+        /// The payload.
+        /// </value>
+        public string Payload { get; set; }
+
+        /// <summary>
         /// Publishes the specified entity.
         /// </summary>
         /// <param name="senderNodeName">Name of the sender node.</param>
         /// <param name="messageType">The message.</param>
         /// <param name="recipientNodeName">Name of the recipient node.</param>
-        public static void Publish( string senderNodeName, string messageType, string recipientNodeName = "" )
+        /// <param name="payload">The payload.</param>
+        public static void Publish( string senderNodeName, string messageType, string recipientNodeName = "", string payload = "" )
         {
             var webFarmWasUpdatedMessage = new WebFarmWasUpdatedMessage
             {
                 SenderNodeName = senderNodeName,
                 MessageType = messageType,
-                RecipientNodeName = recipientNodeName
+                RecipientNodeName = recipientNodeName,
+                Payload = payload
             };
 
             _ = RockMessageBus.PublishAsync<WebFarmQueue, WebFarmWasUpdatedMessage>( webFarmWasUpdatedMessage );

@@ -497,6 +497,9 @@ namespace RockWeb
         {
             try
             {
+                // Stop the Web Farm
+                RockWebFarm.Shutdown();
+
                 // Tell our CompileThemesThread and BlockTypeCompilationThread to cancel if they aren't done when Rock shuts down
                 if ( _threadCancellationTokenSource != null )
                 {
