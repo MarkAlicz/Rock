@@ -46,7 +46,7 @@ namespace Rock.Bus.Message
     /// <summary>
     /// Cache Update Message
     /// </summary>
-    internal sealed class WebFarmWasUpdatedMessage : IWebFarmWasUpdatedMessage
+    public sealed class WebFarmWasUpdatedMessage : IWebFarmWasUpdatedMessage
     {
         /// <summary>
         /// Gets the node name.

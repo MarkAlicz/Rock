@@ -25,7 +25,7 @@ namespace Rock.WebFarm
     /// <summary>
     /// Web Farm Message Bus Consumer
     /// </summary>
-    internal sealed class MessageBusConsumer : RockConsumer<WebFarmQueue, WebFarmWasUpdatedMessage>
+    public sealed class MessageBusConsumer : RockConsumer<WebFarmQueue, WebFarmWasUpdatedMessage>
     {
         /// <summary>
         /// Consumes the specified message.
