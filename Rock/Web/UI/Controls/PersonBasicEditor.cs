@@ -50,6 +50,7 @@ namespace Rock.Web.UI.Controls
         private DynamicControlsPanel _pnlCol2;
         private DynamicControlsPanel _pnlCol3;
 
+        private HiddenField _hfPersonId;
         private DefinedValuePicker _dvpPersonTitle;
         private RockTextBox _tbPersonFirstName;
         private RockTextBox _tbPersonLastName;
@@ -373,6 +374,35 @@ namespace Rock.Web.UI.Controls
             {
                 EnsureChildControls();
                 _rblPersonGender.Visible = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets the Person Id of the <see cref="Person"/> record that was passed to <see cref="SetFromPerson"/>. This will be null if this is a new person
+        /// </summary>
+        /// <value>
+        /// The person identifier.
+        /// </value>
+        public int? PersonId
+        {
+            get
+            {
+                EnsureChildControls();
+                var selectedPersonId = _hfPersonId.Value.AsInteger();
+                if ( selectedPersonId > 0 )
+                {
+                    return selectedPersonId;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+
+            private set
+            {
+                EnsureChildControls();
+                _hfPersonId.Value = value.ToString();
             }
         }
 
@@ -767,6 +797,14 @@ namespace Rock.Web.UI.Controls
             _pnlRow.Controls.Add( _pnlCol2 );
             _pnlRow.Controls.Add( _pnlCol3 );
 
+
+            _hfPersonId = new HiddenField
+            {
+                ID = "_hfPersonId"
+            };
+
+            _phControls.Controls.Add( _hfPersonId );
+
             _dvpPersonTitle = new DefinedValuePicker
             {
                 ID = "_dvpPersonTitle",
@@ -966,6 +1004,22 @@ namespace Rock.Web.UI.Controls
             UpdatePerson( person, new RockContext() );
         }
 
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public class PersonEditorException : Exception
+        {
+            /// <summary>
+            /// Initializes a new instance of the <see cref="PersonEditorException"/> class.
+            /// </summary>
+            /// <param name="message">The message that describes the error.</param>
+            public PersonEditorException( string message )
+                : base( message )
+            {
+            }
+        }
+
         /// <summary>
         /// Updates the person fields based on what the values in the PersonBasicEditor are.
         /// (Changes are not saved to the database.)
@@ -975,6 +1029,11 @@ namespace Rock.Web.UI.Controls
         /// <returns></returns>
         public void UpdatePerson( Person person, RockContext rockContext )
         {
+            if ( this.PersonId > 0 && this.PersonId != person.Id )
+            {
+                throw new PersonEditorException( "UpdatePerson must use the same person that was used in SetFromPerson." );
+            }
+
             if ( ShowTitle )
             {
                 person.TitleValueId = this.PersonTitleValueId;
@@ -1039,6 +1098,7 @@ namespace Rock.Web.UI.Controls
             // if a null person is specified, use whatever the defaults are for a new Person object
             person = person ?? new Person();
             this.PersonTitleValueId = person.TitleValueId;
+            this.PersonId = person.Id;
             this.FirstName = person.FirstName;
             this.FirstName = person.NickName;
             this.LastName = person.LastName;

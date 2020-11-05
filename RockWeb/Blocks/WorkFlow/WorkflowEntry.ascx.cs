@@ -889,63 +889,100 @@ namespace RockWeb.Blocks.WorkFlow
                 dvpMaritalStatus.Visible = false;
             }
 
-            var promptForAddress = ( form.PersonEntryAddressEntryOption != WorkflowActionFormPersonEntryOption.Hidden ) && form.PersonEntryGroupLocationTypeValueId.HasValue;
             acPersonEntryAddress.Required = form.PersonEntryAddressEntryOption == WorkflowActionFormPersonEntryOption.Required;
 
             lPersonEntryPostHtml.Text = form.PersonEntryPostHtml.ResolveMergeFields( mergeFields );
 
+            var promptForAddress = ( form.PersonEntryAddressEntryOption != WorkflowActionFormPersonEntryOption.Hidden ) && form.PersonEntryGroupLocationTypeValueId.HasValue;
             acPersonEntryAddress.Visible = promptForAddress;
 
-            if ( form.PersonEntryAutofillCurrentPerson && setValues && CurrentPerson != null )
+            if ( setValues )
             {
-                cpPersonEntryCampus.SetValue( CurrentPerson.PrimaryCampusId );
-                pePerson1.SetFromPerson( CurrentPerson );
+                SetPersonEntryValues( form );
+            }
+        }
 
-                var spouse = CurrentPerson.GetSpouse();
-                if ( spouse != null )
-                {
-                    // don't show marital status if person has a spouse
-                    dvpMaritalStatus.Visible = false;
-                }
+        /// <summary>
+        /// Sets the person entry values.
+        /// </summary>
+        /// <param name="form">The form.</param>
+        private void SetPersonEntryValues( WorkflowActionFormCache form )
+        {
+            var rockContext = new RockContext();
+            Person personEntryPerson = null;
+            Person personEntrySpouse = null;
+            int? personEntryFamilyId = null;
 
-                if ( form.PersonEntrySpouseEntryOption != WorkflowActionFormPersonEntryOption.Hidden )
-                {
-                    pePerson2.SetFromPerson( spouse );
-                }
-
-                dvpMaritalStatus.SetValue( CurrentPerson.MaritalStatusValueId );
-
-                if ( promptForAddress )
-                {
-                    var primaryFamilyId = CurrentPerson.PrimaryFamilyId;
-                    var personEntryGroupLocationTypeValueId = form.PersonEntryGroupLocationTypeValueId.Value;
-                    if ( primaryFamilyId.HasValue )
-                    {
-                        var rockContext = new RockContext();
-                        var familyLocation = new GroupLocationService( rockContext ).Queryable()
-                            .Where( a => a.GroupId == primaryFamilyId && a.GroupLocationTypeValueId == form.PersonEntryGroupLocationTypeValueId ).Select( a => a.Location ).FirstOrDefault();
-
-                        if ( familyLocation != null )
-                        {
-                            acPersonEntryAddress.SetValues( familyLocation );
-                        }
-                        else
-                        {
-                            acPersonEntryAddress.SetValues( null );
-                        }
-                    }
-                }
+            if ( form.PersonEntryAutofillCurrentPerson && CurrentPersonId.HasValue )
+            {
+                var personService = new PersonService( rockContext );
+                personEntryPerson = personService.Get( CurrentPersonId.Value );
+                personEntrySpouse = personEntryPerson.GetSpouse();
+                personEntryFamilyId = personEntryPerson.PrimaryFamilyId;
             }
             else
             {
-                // not using the current person, so initialize with a null person 
-                if ( setValues )
+                // Not using the current person, so initialize with the current value of PersonEntryPersonAttributeGuid
+                var personAliasService = new PersonAliasService( rockContext );
+                AttributeCache personEntryPersonAttribute = form.FormAttributes.Where( a => a.Attribute.Guid == form.PersonEntryPersonAttributeGuid.Value ).Select( a => a.Attribute ).FirstOrDefault();
+                AttributeCache personEntrySpousePersonAttribute = form.FormAttributes.Where( a => a.Attribute.Guid == form.PersonEntrySpouseAttributeGuid.Value ).Select( a => a.Attribute ).FirstOrDefault();
+                AttributeCache personEntryFamilyAttribute = form.FormAttributes.Where( a => a.Attribute.Guid == form.PersonEntryFamilyAttributeGuid.Value ).Select( a => a.Attribute ).FirstOrDefault();
+
+                var personAliasGuid = GetWorkflowAttributeEntityAttributeValue( personEntryPersonAttribute ).AsGuidOrNull();
+                var spousePersonAliasGuid = GetWorkflowAttributeEntityAttributeValue( personEntrySpousePersonAttribute ).AsGuidOrNull();
+                var familyGuid = GetWorkflowAttributeEntityAttributeValue( personEntryFamilyAttribute ).AsGuidOrNull();
+
+                if ( personAliasGuid.HasValue )
                 {
-                    pePerson1.SetFromPerson( null );
-                    if ( pePerson2.Visible )
+                    // the workflow already set a value for the FormEntry person, so use that
+                    personEntryPerson = personAliasService.GetPerson( personAliasGuid.Value );
+
+                    if ( spousePersonAliasGuid.HasValue )
                     {
-                        pePerson2.SetFromPerson( null );
+                        personEntrySpouse = personAliasService.GetPerson( spousePersonAliasGuid.Value );
                     }
+
+                    if ( familyGuid.HasValue )
+                    {
+                        personEntryFamilyId = new GroupService( rockContext ).GetId( familyGuid.Value );
+                    }
+                }
+            }
+
+            if ( personEntryPerson != null )
+            {
+                cpPersonEntryCampus.SetValue( personEntryPerson.PrimaryCampusId );
+                dvpMaritalStatus.SetValue( personEntryPerson.MaritalStatusValueId );
+            }
+
+            pePerson1.SetFromPerson( personEntryPerson );
+            if ( personEntrySpouse != null )
+            {
+                // don't show marital status if person has a spouse
+                dvpMaritalStatus.Visible = false;
+            }
+
+            if ( form.PersonEntrySpouseEntryOption != WorkflowActionFormPersonEntryOption.Hidden )
+            {
+                pePerson2.SetFromPerson( personEntrySpouse );
+            }
+
+            var promptForAddress = ( form.PersonEntryAddressEntryOption != WorkflowActionFormPersonEntryOption.Hidden ) && form.PersonEntryGroupLocationTypeValueId.HasValue;
+
+            if ( promptForAddress && personEntryFamilyId != null )
+            {
+                var personEntryGroupLocationTypeValueId = form.PersonEntryGroupLocationTypeValueId.Value;
+
+                var familyLocation = new GroupLocationService( rockContext ).Queryable()
+                    .Where( a => a.GroupId == personEntryFamilyId.Value && a.GroupLocationTypeValueId == form.PersonEntryGroupLocationTypeValueId ).Select( a => a.Location ).FirstOrDefault();
+
+                if ( familyLocation != null )
+                {
+                    acPersonEntryAddress.SetValues( familyLocation );
+                }
+                else
+                {
+                    acPersonEntryAddress.SetValues( null );
                 }
             }
         }
@@ -1090,8 +1127,8 @@ namespace RockWeb.Blocks.WorkFlow
             }
             else
             {
-                existingPersonId = null;
-            }
+                existingPersonId = pePerson1.PersonId;
+            }   existingPersonSpouseId = pePerson2.PersonId;
 
             var attemptMatchForPerson = true;
 
@@ -1253,6 +1290,23 @@ namespace RockWeb.Blocks.WorkFlow
             }
 
             return item;
+        }
+
+        /// <summary>
+        /// Gets the workflow attribute entity attribute value.
+        /// </summary>
+        /// <param name="attribute">The attribute.</param>
+        /// <param name="attributeKey">The attribute key.</param>
+        /// <returns></returns>
+        private string GetWorkflowAttributeEntityAttributeValue( AttributeCache attribute )
+        {
+            var workflowAttributeEntity = GetWorkflowAttributeEntity( attribute );
+            if ( workflowAttributeEntity != null )
+            {
+                return workflowAttributeEntity.GetAttributeValue( attribute.Key );
+            }
+
+            return null;
         }
 
         /// <summary>
