@@ -369,15 +369,18 @@ namespace Rock.WebFarm
             // If another node pinged this node, then that node is the leader, not this one
             if ( _wasPinged )
             {
-                Debug( "I was pinged, I'm not the leader" );
+                Debug( "My time to poll. I was pinged, so I'm not the leader" );
                 _wasPinged = false;
                 return;
             }
 
-            Debug( "Starting leadership duty" );
-            var pollingTime = RockDateTime.Now;
+            Debug( "My time to poll. I was not pinged, so I'm starting leadership duties" );
 
-            // Assert this nodes leadership in the database
+            // Ping other nodes
+            var pollingTime = RockDateTime.Now;
+            PublishEvent( EventType.Ping );
+
+            // Assert this node's leadership in the database
             using ( var rockContext = new RockContext() )
             {
                 var webFarmNodeService = new WebFarmNodeService( rockContext );
@@ -396,9 +399,6 @@ namespace Rock.WebFarm
                 rockContext.SaveChanges();
             }
 
-            // Ping other nodes
-            PublishEvent( EventType.Ping );
-
             // Wait a maximum of 1 second for responses
             await Task.Delay( TimeSpan.FromSeconds( 1 ) ).ContinueWith( t =>
             {
@@ -413,6 +413,8 @@ namespace Rock.WebFarm
                             wfn.IsActive &&
                             wfn.NodeName != _nodeName )
                         .ToList();
+
+                    Debug( $"I found {unresponsiveNodes.Count} unresponsive nodes" );
 
                     foreach ( var node in unresponsiveNodes )
                     {
@@ -432,7 +434,7 @@ namespace Rock.WebFarm
         /// <param name="senderNodeName">Name of the sender node.</param>
         internal static void OnReceivedStartup( string senderNodeName )
         {
-            Debug( $"{senderNodeName} started" );
+            Debug( $"I heard that {senderNodeName} started" );
         }
 
         /// <summary>
@@ -441,7 +443,7 @@ namespace Rock.WebFarm
         /// <param name="senderNodeName">Name of the sender node.</param>
         internal static void OnReceivedShutdown( string senderNodeName )
         {
-            Debug( $"{senderNodeName} shutdown" );
+            Debug( $"I heard that {senderNodeName} shutdown" );
         }
 
         /// <summary>
@@ -451,7 +453,7 @@ namespace Rock.WebFarm
         /// <param name="payload">The payload.</param>
         internal static void OnReceivedWarning( string senderNodeName, string payload )
         {
-            Debug( $"{senderNodeName} warned '{payload}'" );
+            Debug( $"I heard that {senderNodeName} warned '{payload}'" );
         }
 
         #endregion Event Handlers
