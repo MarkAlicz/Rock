@@ -357,6 +357,7 @@ namespace Rock.WebFarm
 
                 node.LastSeenDateTime = RockDateTime.Now;
                 node.IsActive = true;
+                rockContext.SaveChanges();
             }
         }
 
