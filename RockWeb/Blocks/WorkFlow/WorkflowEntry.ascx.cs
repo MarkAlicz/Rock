@@ -276,7 +276,7 @@ namespace RockWeb.Blocks.WorkFlow
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void Block_BlockUpdated( object sender, EventArgs e )
         {
-            SetBlockTitle();
+            NavigateToCurrentPageReference();
         }
 
         /// <summary>
@@ -907,34 +907,21 @@ namespace RockWeb.Blocks.WorkFlow
             {
                 var personService = new PersonService( rockContext );
                 personEntryPerson = personService.Get( CurrentPersonId.Value );
-                personEntrySpouse = personEntryPerson.GetSpouse();
-                personEntryFamilyId = personEntryPerson.PrimaryFamilyId;
             }
             else
             {
                 // Not using the current person, so initialize with the current value of PersonEntryPersonAttributeGuid
-                var personAliasService = new PersonAliasService( rockContext );
-                AttributeCache personEntryPersonAttribute = form.FormAttributes.Where( a => a.Attribute.Guid == form.PersonEntryPersonAttributeGuid.Value ).Select( a => a.Attribute ).FirstOrDefault();
-                AttributeCache personEntrySpousePersonAttribute = form.FormAttributes.Where( a => a.Attribute.Guid == form.PersonEntrySpouseAttributeGuid.Value ).Select( a => a.Attribute ).FirstOrDefault();
-                AttributeCache personEntryFamilyAttribute = form.FormAttributes.Where( a => a.Attribute.Guid == form.PersonEntryFamilyAttributeGuid.Value ).Select( a => a.Attribute ).FirstOrDefault();
-
-                var personAliasGuid = GetWorkflowAttributeEntityAttributeValue( personEntryPersonAttribute ).AsGuidOrNull();
-                var spousePersonAliasGuid = GetWorkflowAttributeEntityAttributeValue( personEntrySpousePersonAttribute ).AsGuidOrNull();
-                var familyGuid = GetWorkflowAttributeEntityAttributeValue( personEntryFamilyAttribute ).AsGuidOrNull();
-
-                if ( personAliasGuid.HasValue )
+                if ( form.PersonEntryPersonAttributeGuid.HasValue )
                 {
-                    // the workflow already set a value for the FormEntry person, so use that
-                    personEntryPerson = personAliasService.GetPerson( personAliasGuid.Value );
+                    AttributeCache personEntryPersonAttribute = form.FormAttributes.Where( a => a.Attribute.Guid == form.PersonEntryPersonAttributeGuid.Value ).Select( a => a.Attribute ).FirstOrDefault();
 
-                    if ( spousePersonAliasGuid.HasValue )
-                    {
-                        personEntrySpouse = personAliasService.GetPerson( spousePersonAliasGuid.Value );
-                    }
+                    var personAliasGuid = GetWorkflowAttributeEntityAttributeValue( personEntryPersonAttribute ).AsGuidOrNull();
 
-                    if ( familyGuid.HasValue )
+                    if ( personAliasGuid.HasValue )
                     {
-                        personEntryFamilyId = new GroupService( rockContext ).GetId( familyGuid.Value );
+                        // the workflow already set a value for the FormEntry person, so use that
+                        var personAliasService = new PersonAliasService( rockContext );
+                        personEntryPerson = personAliasService.GetPerson( personAliasGuid.Value );
                     }
                 }
             }
@@ -943,6 +930,15 @@ namespace RockWeb.Blocks.WorkFlow
             {
                 cpPersonEntryCampus.SetValue( personEntryPerson.PrimaryCampusId );
                 dvpMaritalStatus.SetValue( personEntryPerson.MaritalStatusValueId );
+
+                /* 2020-11-06 MDP
+                 * if we were able determine the person, either from the AutofillCurrentPerson option, or from the current value in the  PersonEntryPersonAttributeGuid value
+                 * get the spouse and family from that person.
+                 * To be consistent and to avoid weird edge cases, always get Spouse and Family from person, instead of also checking SpouseAttributeGuid and FamilyAttributeGuid.
+                 */
+
+                personEntrySpouse = personEntryPerson.GetSpouse();
+                personEntryFamilyId = personEntryPerson.PrimaryFamilyId;
             }
 
             pePerson1.SetFromPerson( personEntryPerson );
@@ -1122,14 +1118,20 @@ namespace RockWeb.Blocks.WorkFlow
 
             existingPersonSpouseId = pePerson2.PersonId;
 
-            var attemptMatchForPerson = true;
-
-            var personEntryPerson = CreateOrUpdatePersonFromPersonEditor( existingPersonId, attemptMatchForPerson, pePerson1, personEntryRockContext );
+            var personEntryPerson = CreateOrUpdatePersonFromPersonEditor( existingPersonId, null, pePerson1, personEntryRockContext );
             if ( personEntryPerson.Id == 0 )
             {
                 personEntryPerson.ConnectionStatusValueId = form.PersonEntryConnectionStatusValueId;
                 personEntryPerson.RecordStatusValueId = form.PersonEntryRecordStatusValueId;
                 PersonService.SaveNewPerson( personEntryPerson, personEntryRockContext, cpPersonEntryCampus.SelectedCampusId );
+            }
+
+            // if we ended up matching an existing person, get their spouse as the selected spouse
+            var matchedPersonsSpouse = personEntryPerson.GetSpouse();
+
+            if ( matchedPersonsSpouse != null )
+            {
+                existingPersonSpouseId = matchedPersonsSpouse.Id;
             }
 
             if ( form.PersonEntryMaritalStatusEntryOption != WorkflowActionFormPersonEntryOption.Hidden )
@@ -1148,12 +1150,9 @@ namespace RockWeb.Blocks.WorkFlow
             var personService = new PersonService( personEntryRockContext );
             var primaryFamily = personService.GetSelect( personEntryPersonId, s => s.PrimaryFamily );
 
-            // if the person doesn't have an existing spouse, just create a new spouse. Don't attempt to find a spouse for them.
-            // For example, if Tom Miller (Single) types in spouse information that matches Cindy Decker's information, just create a new Cindy Decker
             if ( pePerson2.Visible )
             {
-                var attemptMatchForSpouse = false;
-                var personEntryPersonSpouse = CreateOrUpdatePersonFromPersonEditor( existingPersonSpouseId, attemptMatchForSpouse, pePerson2, personEntryRockContext );
+                var personEntryPersonSpouse = CreateOrUpdatePersonFromPersonEditor( existingPersonSpouseId, primaryFamily, pePerson2, personEntryRockContext );
                 if ( personEntryPersonSpouse.Id == 0 )
                 {
                     personEntryPersonSpouse.ConnectionStatusValueId = form.PersonEntryConnectionStatusValueId;
@@ -1305,11 +1304,11 @@ namespace RockWeb.Blocks.WorkFlow
         /// Creates or Updates person from person editor.
         /// </summary>
         /// <param name="existingPersonId">The existing person identifier.</param>
-        /// <param name="attemptMatch">if set to <c>true</c> [attempt match].</param>
+        /// <param name="limitMatchToFamily">Limit matches to people in specified family</param>
         /// <param name="personEditor">The person editor.</param>
         /// <param name="rockContext">The rock context.</param>
         /// <returns></returns>
-        private static Person CreateOrUpdatePersonFromPersonEditor( int? existingPersonId, bool attemptMatch, PersonBasicEditor personEditor, RockContext rockContext )
+        private static Person CreateOrUpdatePersonFromPersonEditor( int? existingPersonId, Group limitMatchToFamily, PersonBasicEditor personEditor, RockContext rockContext )
         {
             var personService = new PersonService( rockContext );
             Person personEntryPerson = null;
@@ -1321,19 +1320,63 @@ namespace RockWeb.Blocks.WorkFlow
                 return personEntryPerson;
             }
 
-            // note, if we are updating the existing Spouse record, don't attempt to find their spouse
-            if ( attemptMatch )
+            // Match or Create Person from personEditor
+            var personMatchQuery = new PersonService.PersonMatchQuery( personEditor.FirstName, personEditor.LastName, personEditor.Email, personEditor.MobilePhoneNumber )
             {
-                // Match or Create Person from personEditor
-                var personMatchQuery = new PersonService.PersonMatchQuery( personEditor.FirstName, personEditor.LastName, personEditor.Email, personEditor.MobilePhoneNumber )
-                {
-                    Gender = personEditor.PersonGender,
-                    BirthDate = personEditor.PersonBirthDate,
-                    SuffixValueId = personEditor.PersonSuffixValueId
-                };
+                Gender = personEditor.PersonGender,
+                BirthDate = personEditor.PersonBirthDate,
+                SuffixValueId = personEditor.PersonSuffixValueId
+            };
 
-                bool updatePrimaryEmail = false;
-                personEntryPerson = personService.FindPerson( personMatchQuery, updatePrimaryEmail );
+            bool updatePrimaryEmail = false;
+            personEntryPerson = personService.FindPerson( personMatchQuery, updatePrimaryEmail );
+
+            /*
+            2020-11-06 MDP
+            ** Special Logic when doing matches for Spouses**
+            * See discussion on https://app.asana.com/0/0/1198971294248209/f for more details
+            *
+            If we are trying to find a matching person record for the Spouse, only consider matches that are in the same family as the primary person.
+            If we find a matching person but they are in a different family, create a new person record instead.
+            We don't want to risk causing two person records from different families to get married due to our matching logic.
+
+            This avoids a problem such as these
+            #1
+            - Person1 fields match on Tom Miller (Existing Single guy)
+            - Spouse fields match on Cindy Decker (married to Ted Decker)
+
+            Instead of causing Tom Miller and the existing Cindy Decker to get married, create a new "duplicate" Cindy decker instead.
+
+            #2
+            - Person1 fields match on Tom Miller (Existing single guy)
+            - Spouse fields match on Mary Smith (an unmarried female in another family)
+
+            Even in case #2, create a duplicate Mary Smith instead.
+
+            The exception is a situation like this
+            #3
+            - Person1 Fields match on Steve Rogers. Steve Rogers' family contains a Sally Rogers, but Sally isn't his spouse because
+              one (or both) of them doesn't have a marital status of Married.
+            - Spouse Fields match on Sally Rogers (in Steve Rogers' family)
+
+            In case #3, use the matched Sally Rogers record, and change Steve and Sally's marital status to married
+
+            Note that in the case of matching on an existing person that has a spouse, for example
+            #4
+            - Person1 Fields match Bill Hills.
+            - Bill has a spouse named Jill Hills
+            - 
+
+            In case #4, since Bill has a spouse, the data in the Spouse fields will be used to update Bill's spouse Jill Hills
+             
+             */
+
+            if ( personEntryPerson != null && limitMatchToFamily != null )
+            {
+                if ( personEntryPerson.PrimaryFamilyId != limitMatchToFamily.Id )
+                {
+                    personEntryPerson = null;
+                }
             }
 
             if ( personEntryPerson != null )
