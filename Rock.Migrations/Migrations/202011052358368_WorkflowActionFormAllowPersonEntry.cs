@@ -44,22 +44,16 @@ namespace Rock.Migrations
             AddColumn("dbo.WorkflowActionForm", "PersonEntrySpouseLabel", c => c.String(maxLength: 50));
             AddColumn("dbo.WorkflowActionForm", "PersonEntryConnectionStatusValueId", c => c.Int());
             AddColumn("dbo.WorkflowActionForm", "PersonEntryRecordStatusValueId", c => c.Int());
-            AddColumn("dbo.WorkflowActionForm", "PersonEntryAddressTypeValueId", c => c.Int());
-            AddColumn("dbo.WorkflowActionForm", "PersonEntryPersonAttributeId", c => c.Int());
-            AddColumn("dbo.WorkflowActionForm", "PersonEntrySpouseAttributeId", c => c.Int());
-            AddColumn("dbo.WorkflowActionForm", "PersonEntryFamilyAttributeId", c => c.Int());
+            AddColumn("dbo.WorkflowActionForm", "PersonEntryGroupLocationTypeValueId", c => c.Int());
+            AddColumn("dbo.WorkflowActionForm", "PersonEntryPersonAttributeGuid", c => c.Guid());
+            AddColumn("dbo.WorkflowActionForm", "PersonEntrySpouseAttributeGuid", c => c.Guid());
+            AddColumn("dbo.WorkflowActionForm", "PersonEntryFamilyAttributeGuid", c => c.Guid());
             CreateIndex("dbo.WorkflowActionForm", "PersonEntryConnectionStatusValueId");
             CreateIndex("dbo.WorkflowActionForm", "PersonEntryRecordStatusValueId");
-            CreateIndex("dbo.WorkflowActionForm", "PersonEntryAddressTypeValueId");
-            CreateIndex("dbo.WorkflowActionForm", "PersonEntryPersonAttributeId");
-            CreateIndex("dbo.WorkflowActionForm", "PersonEntrySpouseAttributeId");
-            CreateIndex("dbo.WorkflowActionForm", "PersonEntryFamilyAttributeId");
-            AddForeignKey("dbo.WorkflowActionForm", "PersonEntryAddressTypeValueId", "dbo.DefinedValue", "Id");
+            CreateIndex("dbo.WorkflowActionForm", "PersonEntryGroupLocationTypeValueId");
             AddForeignKey("dbo.WorkflowActionForm", "PersonEntryConnectionStatusValueId", "dbo.DefinedValue", "Id");
-            AddForeignKey("dbo.WorkflowActionForm", "PersonEntryFamilyAttributeId", "dbo.Attribute", "Id");
-            AddForeignKey("dbo.WorkflowActionForm", "PersonEntryPersonAttributeId", "dbo.Attribute", "Id");
+            AddForeignKey("dbo.WorkflowActionForm", "PersonEntryGroupLocationTypeValueId", "dbo.DefinedValue", "Id");
             AddForeignKey("dbo.WorkflowActionForm", "PersonEntryRecordStatusValueId", "dbo.DefinedValue", "Id");
-            AddForeignKey("dbo.WorkflowActionForm", "PersonEntrySpouseAttributeId", "dbo.Attribute", "Id");
         }
         
         /// <summary>
@@ -67,22 +61,16 @@ namespace Rock.Migrations
         /// </summary>
         public override void Down()
         {
-            DropForeignKey("dbo.WorkflowActionForm", "PersonEntrySpouseAttributeId", "dbo.Attribute");
             DropForeignKey("dbo.WorkflowActionForm", "PersonEntryRecordStatusValueId", "dbo.DefinedValue");
-            DropForeignKey("dbo.WorkflowActionForm", "PersonEntryPersonAttributeId", "dbo.Attribute");
-            DropForeignKey("dbo.WorkflowActionForm", "PersonEntryFamilyAttributeId", "dbo.Attribute");
+            DropForeignKey("dbo.WorkflowActionForm", "PersonEntryGroupLocationTypeValueId", "dbo.DefinedValue");
             DropForeignKey("dbo.WorkflowActionForm", "PersonEntryConnectionStatusValueId", "dbo.DefinedValue");
-            DropForeignKey("dbo.WorkflowActionForm", "PersonEntryAddressTypeValueId", "dbo.DefinedValue");
-            DropIndex("dbo.WorkflowActionForm", new[] { "PersonEntryFamilyAttributeId" });
-            DropIndex("dbo.WorkflowActionForm", new[] { "PersonEntrySpouseAttributeId" });
-            DropIndex("dbo.WorkflowActionForm", new[] { "PersonEntryPersonAttributeId" });
-            DropIndex("dbo.WorkflowActionForm", new[] { "PersonEntryAddressTypeValueId" });
+            DropIndex("dbo.WorkflowActionForm", new[] { "PersonEntryGroupLocationTypeValueId" });
             DropIndex("dbo.WorkflowActionForm", new[] { "PersonEntryRecordStatusValueId" });
             DropIndex("dbo.WorkflowActionForm", new[] { "PersonEntryConnectionStatusValueId" });
-            DropColumn("dbo.WorkflowActionForm", "PersonEntryFamilyAttributeId");
-            DropColumn("dbo.WorkflowActionForm", "PersonEntrySpouseAttributeId");
-            DropColumn("dbo.WorkflowActionForm", "PersonEntryPersonAttributeId");
-            DropColumn("dbo.WorkflowActionForm", "PersonEntryAddressTypeValueId");
+            DropColumn("dbo.WorkflowActionForm", "PersonEntryFamilyAttributeGuid");
+            DropColumn("dbo.WorkflowActionForm", "PersonEntrySpouseAttributeGuid");
+            DropColumn("dbo.WorkflowActionForm", "PersonEntryPersonAttributeGuid");
+            DropColumn("dbo.WorkflowActionForm", "PersonEntryGroupLocationTypeValueId");
             DropColumn("dbo.WorkflowActionForm", "PersonEntryRecordStatusValueId");
             DropColumn("dbo.WorkflowActionForm", "PersonEntryConnectionStatusValueId");
             DropColumn("dbo.WorkflowActionForm", "PersonEntrySpouseLabel");

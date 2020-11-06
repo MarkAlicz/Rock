@@ -97,15 +97,16 @@
         </div>
 
         <script>
-            function handleWorkflowActionButtonClick(validationGroup, b, c) {
-                // make sure page is valid before doing the postback (from this button's href)
-                if (Page_ClientValidate(validationGroup)) {
-                    // 
-                    $(this).button('loading');
-                    return true;
-                } else {
-                    return false;
+            function handleWorkflowActionButtonClick(validationGroup, causesValidation) {
+                if (causesValidation) {
+                    // make sure page is valid before doing the postback (from this button's href)
+                    if (!Page_ClientValidate(validationGroup)) {
+                        return false;
+                    }
                 }
+
+                $(this).button('loading');
+                return true;
             }
         </script>
 

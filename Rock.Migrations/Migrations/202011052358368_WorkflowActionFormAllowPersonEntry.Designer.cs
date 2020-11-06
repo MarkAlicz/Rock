@@ -7,13 +7,13 @@ namespace Rock.Migrations
     using System.Resources;
     
     [GeneratedCode("EntityFramework.Migrations", "6.1.3-40302")]
-    public sealed partial class WorkflowActionFormAllowPersonEntry2 : IMigrationMetadata
+    public sealed partial class WorkflowActionFormAllowPersonEntry : IMigrationMetadata
     {
-        private readonly ResourceManager Resources = new ResourceManager(typeof(WorkflowActionFormAllowPersonEntry2));
+        private readonly ResourceManager Resources = new ResourceManager(typeof(WorkflowActionFormAllowPersonEntry));
         
         string IMigrationMetadata.Id
         {
-            get { return "202010272358072_WorkflowActionFormAllowPersonEntry2"; }
+            get { return "202011052358368_WorkflowActionFormAllowPersonEntry"; }
         }
         
         string IMigrationMetadata.Source

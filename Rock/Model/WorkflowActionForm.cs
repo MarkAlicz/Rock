@@ -527,14 +527,14 @@ namespace Rock.Model
         /// </remarks>
         public static List<WorkflowActionFormUserAction> FromUriEncodedString( string encodedString )
         {
-            const string buttonCancelGuid = "5683e775-b9f3-408c-80ac-94de0e51cf3a";
+            Guid buttonCancelGuid = Rock.SystemGuid.DefinedValue.BUTTON_HTML_CANCEL.AsGuid();
 
             var buttons = new List<WorkflowActionFormUserAction>();
 
             var buttonList = Rock.Utility.RockSerializableList.FromUriEncodedString( encodedString, StringSplitOptions.RemoveEmptyEntries );
 
             // Without any other way of determining this, assume that the built-in Cancel button is the only action that does not cause validation.
-            var nonValidationButtonList = new List<Guid> { buttonCancelGuid.AsGuid() };
+            var nonValidationButtonList = new List<Guid> { buttonCancelGuid };
 
             foreach ( var buttonDefinitionText in buttonList.List )
             {
@@ -546,12 +546,20 @@ namespace Rock.Model
                 button.ActionName = nameValueResponse.Length > 0 ? nameValueResponse[0] : string.Empty;
 
                 // Button Type
-                button.ButtonTypeGuid = nameValueResponse[1];
+                if ( nameValueResponse.Length > 1 )
+                {
+                    button.ButtonTypeGuid = nameValueResponse[1];
+                }
+
+                if ( button.ButtonTypeGuid.IsNullOrWhiteSpace() )
+                {
+                    button.ButtonTypeGuid = Rock.SystemGuid.DefinedValue.BUTTON_HTML_PRIMARY;
+                }
 
                 // Determine if the button causes form validation.                    
                 button.CausesValidation = !nonValidationButtonList.Contains( button.ButtonTypeGuid.AsGuid() );
 
-                if ( button.ButtonTypeGuid.AsGuid() == buttonCancelGuid.AsGuid() )
+                if ( button.ButtonTypeGuid.AsGuid() == buttonCancelGuid )
                 {
                     button.CausesValidation = false;
                 }

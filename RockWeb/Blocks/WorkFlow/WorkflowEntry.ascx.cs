@@ -769,34 +769,16 @@ namespace RockWeb.Blocks.WorkFlow
 
             foreach ( var button in buttons )
             {
-            foreach ( var action in form.Actions.Split( new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries ) )
-            {
-                var actionParts = action.Split( new char[] { '^' } );
-                if ( actionParts.Length == 0 )
-                {
-                    continue;
-                }
-
-                var buttonText = actionParts[0].EncodeHtml();
-
                 // Get the button HTML. If actionParts has a guid at [1],
                 // get the buttonHtml from the DefinedValue with that Guid.
                 // Otherwise, use a default
                 string buttonHtml = string.Empty;
                 DefinedValueCache buttonDefinedValue = null;
-                if ( actionParts.Length > 1 )
-                {
-                    Guid? buttonHtmlDefinedValueGuid = actionParts[1].AsGuidOrNull();
-                    if ( buttonHtmlDefinedValueGuid.HasValue )
-                    {
-                        buttonDefinedValue = DefinedValueCache.Get( buttonHtmlDefinedValueGuid.Value );
-                    }
-                }
 
-                if ( buttonDefinedValue == null )
+                Guid? buttonHtmlDefinedValueGuid = button.ButtonTypeGuid.AsGuidOrNull();
+                if ( buttonHtmlDefinedValueGuid.HasValue )
                 {
-                    // actionParts didn't include a Guid for the Button Defined Value, so default to PRIMARY button
-                    buttonDefinedValue = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.BUTTON_HTML_PRIMARY.AsGuid() );
+                    buttonDefinedValue = DefinedValueCache.Get( buttonHtmlDefinedValueGuid.Value );
                 }
 
                 if ( buttonDefinedValue != null )
@@ -810,9 +792,14 @@ namespace RockWeb.Blocks.WorkFlow
                 }
 
                 var buttonMergeFields = new Dictionary<string, object>();
+                var buttonText = button.ActionName.EncodeHtml();
                 buttonMergeFields.Add( "ButtonText", buttonText );
 
-                string buttonClickScript = string.Format( "handleWorkflowActionButtonClick('{0}', this);", BlockValidationGroup );
+                string buttonClickScript = string.Format(
+                    "handleWorkflowActionButtonClick('{0}', {1});",
+                    BlockValidationGroup,
+                    button.CausesValidation.ToJavaScriptValue() );
+
                 buttonMergeFields.Add( "ButtonClick", buttonClickScript );
 
                 var buttonLinkScript = Page.ClientScript.GetPostBackClientHyperlink( this, buttonText );
@@ -1415,22 +1402,28 @@ namespace RockWeb.Blocks.WorkFlow
             Guid activityTypeGuid = Guid.Empty;
             string responseText = "Your information has been submitted successfully.";
 
-            foreach ( var action in _actionType.WorkflowForm.Actions.Split( new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries ) )
+            // If the selected action requires valid form data, trigger page validation and discontinue processing if there are any errors.
+            var buttons = WorkflowActionFormUserAction.FromUriEncodedString( _actionType.WorkflowForm.Actions );
+
+            var button = buttons.FirstOrDefault( x => x.ActionName == formAction );
+
+            if ( button != null )
             {
-                var actionDetails = action.Split( new char[] { '^' } );
-                if ( actionDetails.Length > 0 && actionDetails[0] == formAction )
+                if ( button.CausesValidation )
                 {
-                    if ( actionDetails.Length > 2 )
-                    {
-                        activityTypeGuid = actionDetails[2].AsGuid();
-                    }
+                    Page.Validate();
 
-                    if ( actionDetails.Length > 3 && !string.IsNullOrWhiteSpace( actionDetails[3] ) )
+                    if ( !Page.IsValid )
                     {
-                        responseText = actionDetails[3].ResolveMergeFields( mergeFields );
+                        return;
                     }
+                }
 
-                    break;
+                activityTypeGuid = button.ActivateActivityTypeGuid.AsGuid();
+
+                if ( !string.IsNullOrWhiteSpace( button.ResponseText ) )
+                {
+                    responseText = button.ResponseText.ResolveMergeFields( mergeFields );
                 }
             }
 
