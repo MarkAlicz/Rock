@@ -19,14 +19,15 @@ using System.Diagnostics;
 using MassTransit;
 using Rock.Bus.Message;
 using Rock.Bus.Queue;
-using Rock.Model;
 
 namespace Rock.Bus.Consumer
 {
     /// <summary>
-    /// Abstract Debug Consumer
+    /// Abstract Debug Consumer.
+    /// Inherit from this class to supply the generic type parameters. Each class that inherits will provide a writeout
+    /// in the debug console whenever the specified message is received.
     /// </summary>
-    public abstract class RockDebugConsumer<TQueue, TMessage> : RockConsumer<TQueue, TMessage>
+    internal abstract class RockDebugConsumer<TQueue, TMessage> : RockConsumer<TQueue, TMessage>
         where TQueue : IRockQueue, new()
         where TMessage : class, IRockMessage<TQueue>
     {
@@ -47,31 +48,13 @@ namespace Rock.Bus.Consumer
         }
     }
 
+    /*
     /// <summary>
-    /// Person Was Updated
+    /// EXAMPLE: Uncomment this class to get a writeout in the debug console whenever a person was updated message is
+    /// received.
     /// </summary>
-    public class FirstPersonWasUpdatedConsumer : RockDebugConsumer<EntityUpdateQueue, EntityWasUpdatedMessage<Person>>
+    internal sealed class PersonDebugConsumer : RockDebugConsumer<EntityUpdateQueue, EntityWasUpdatedMessage<Person>>
     {
     }
-
-    /// <summary>
-    /// Person Was Updated
-    /// </summary>
-    public class SecondPersonWasUpdatedConsumer : RockDebugConsumer<EntityUpdateQueue, EntityWasUpdatedMessage<Person>>
-    {
-    }
-
-    /// <summary>
-    /// Start Task
-    /// </summary>
-    public class FirstStartTaskConsumer : RockDebugConsumer<StartTaskQueue, StartTaskMessage>
-    {
-    }
-
-    /// <summary>
-    /// Start Task
-    /// </summary>
-    public class SecondStartTaskConsumer : RockDebugConsumer<StartTaskQueue, StartTaskMessage>
-    {
-    }
+    */
 }

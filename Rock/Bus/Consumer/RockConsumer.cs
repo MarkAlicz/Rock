@@ -142,7 +142,7 @@ namespace Rock.Bus.Consumer
             var assemblies = Reflection.GetRockAndPluginAssemblies();
             var types = assemblies
                 .SelectMany( a => a.GetTypes()
-                .Where( t => t.IsClass && ( t.IsPublic || t.IsNestedPublic ) ) );
+                .Where( t => t.IsClass && !t.IsNestedPrivate && !t.IsAbstract ) );
 
             foreach ( var type in types )
             {

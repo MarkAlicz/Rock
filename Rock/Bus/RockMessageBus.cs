@@ -59,7 +59,20 @@ namespace Rock.Bus
         {
             var components = TransportContainer.Instance.Components.Select( c => c.Value.Value );
             var inMemoryTransport = components.FirstOrDefault( c => c is InMemory );
-            _transportComponent = components.FirstOrDefault( c => c.IsActive ) ?? inMemoryTransport;
+
+            // If the in-memory transport is active, then it will be the transport. Admins will need to
+            // explicitly deactivate in-memory for another transport to work. This is to ensure Rock
+            // instances without explicit config (most) will function with the in-memory transport.
+            if ( inMemoryTransport.IsActive )
+            {
+                _transportComponent = inMemoryTransport;
+            }
+            else
+            {
+                // If there is no active transport, in-memory is used anyway. Effectively, in-memory cannot
+                // be deactivated because it would cause Rock to not function.
+                _transportComponent = components.FirstOrDefault( c => c.IsActive ) ?? inMemoryTransport;
+            }
 
             try
             {
@@ -67,15 +80,17 @@ namespace Rock.Bus
             }
             catch ( Exception e )
             {
-                // Try in-memory to see if Rock can start
-                var originalTransport = _transportComponent;
-                _transportComponent = inMemoryTransport;
-
-                if ( originalTransport == inMemoryTransport || _transportComponent == null )
+                // An error occured with the other transport so try one more time with in-memory to see if Rock
+                // can still start to allow UI based configuration
+                if ( _transportComponent == inMemoryTransport )
                 {
-                    // Already tried in-memory or in-memory is not available
+                    // Already tried in-memory and it is what threw the exception
                     throw;
                 }
+
+                // Switch to in-memory
+                var originalTransport = _transportComponent;
+                _transportComponent = inMemoryTransport;
 
                 // Start-up with in-memory
                 await ConfigureBusAsync();

@@ -16,11 +16,6 @@
 //
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using Rock.Bus.Message;
-using Rock.Bus.Queue;
-using Rock.Data;
 using Rock.Web.Cache;
 
 namespace Rock.Transactions
@@ -28,22 +23,8 @@ namespace Rock.Transactions
     /// <summary>
     /// Transaction to process achievements for updated source entities
     /// </summary>
-    public class AchievementsProcessingTransaction : BusStartedTransaction<AchievementsProcessingTransaction.Message>
+    public sealed class AchievementsProcessingTransaction : BusStartedTransaction<AchievementsProcessingTransaction.Message>
     {
-        #region Instance Properties
-
-        /// <summary>
-        /// Gets or sets the source entities.
-        /// </summary>
-        /// <value>
-        /// The source entities.
-        /// </value>
-        public IEnumerable<IEntity> SourceEntities { get; set; }
-
-        #endregion Instance Properties
-
-        #region Abstract Implementation
-
         /// <summary>
         /// Executes this instance.
         /// </summary>
@@ -66,27 +47,9 @@ namespace Rock.Transactions
         }
 
         /// <summary>
-        /// Generate messages from the instance properties.
-        /// </summary>
-        /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
-        public override IEnumerable<Message> GetMessagesToSend()
-        {
-            return SourceEntities?.Select( e => new Message
-            {
-                EntityGuid = e.Guid,
-                EntityTypeName = e.TypeName
-            } );
-        }
-
-        #endregion Abstract Implementation
-
-        #region Helper Classes
-
-        /// <summary>
         /// Message Class
         /// </summary>
-        public sealed class Message : ICommandMessage<StartTaskQueue>
+        public sealed class Message : BusStartedTransactionMessage
         {
             /// <summary>
             /// Gets or sets the entity type name.
@@ -104,7 +67,5 @@ namespace Rock.Transactions
             /// </value>
             public Guid EntityGuid { get; set; }
         }
-
-        #endregion Helper Classes
     }
 }

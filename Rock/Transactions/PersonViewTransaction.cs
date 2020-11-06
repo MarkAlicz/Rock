@@ -14,8 +14,9 @@
 // limitations under the License.
 // </copyright>
 //
-using System;
 
+using System;
+using Rock.Data;
 using Rock.Model;
 
 namespace Rock.Transactions
@@ -23,71 +24,77 @@ namespace Rock.Transactions
     /// <summary>
     /// Tracks when a person is viewed.
     /// </summary>
-    public class PersonViewTransaction : ITransaction
+    public sealed class PersonViewTransaction : BusStartedTransaction<PersonViewTransaction.Message>
     {
-
         /// <summary>
-        /// Gets or sets the viewer person id.
+        /// Executes this instance.
         /// </summary>
-        /// <value>
-        /// The viewer person id.
-        /// </value>
-        public int ViewerPersonAliasId { get; set; }
-
-        /// <summary>
-        /// Gets or sets the target person id.
-        /// </summary>
-        /// <value>
-        /// The target person id.
-        /// </value>
-        public int TargetPersonAliasId { get; set; }
-
-        /// <summary>
-        /// Gets or sets the IP address that requested the page.
-        /// </summary>
-        /// <value>
-        /// IP Address.
-        /// </value>
-        public string IPAddress { get; set; }
-
-        /// <summary>
-        /// Gets or sets the source of the view (site id or application name)
-        /// </summary>
-        /// <value>
-        /// Source.
-        /// </value>
-        public string Source { get; set; }
-
-        /// <summary>
-        /// Gets or sets the DateTime the person was viewed.
-        /// </summary>
-        /// <value>
-        /// Date Viewed.
-        /// </value>
-        public DateTime DateTimeViewed { get; set; }
-        
-        /// <summary>
-        /// Execute method to write transaction to the database.
-        /// </summary>
-        public void Execute()
+        /// <param name="message"></param>
+        public override void Execute( Message message )
         {
             // store the view to the database if the viewer is NOT the target (don't track looking at your own record)
-            if ( ViewerPersonAliasId != TargetPersonAliasId )
+            if ( message.ViewerPersonAliasId != message.TargetPersonAliasId )
             {
                 var pvRecord = new PersonViewed();
-                pvRecord.TargetPersonAliasId = TargetPersonAliasId;
-                pvRecord.ViewerPersonAliasId = ViewerPersonAliasId;
-                pvRecord.ViewDateTime = DateTimeViewed;
-                pvRecord.IpAddress = IPAddress;
-                pvRecord.Source = Source;
+                pvRecord.TargetPersonAliasId = message.TargetPersonAliasId;
+                pvRecord.ViewerPersonAliasId = message.ViewerPersonAliasId;
+                pvRecord.ViewDateTime = message.DateTimeViewed;
+                pvRecord.IpAddress = message.IPAddress;
+                pvRecord.Source = message.Source;
 
-                using ( var rockContext = new Rock.Data.RockContext() )
+                using ( var rockContext = new RockContext() )
                 {
                     var pvService = new PersonViewedService( rockContext );
                     pvService.Add( pvRecord );
                     rockContext.SaveChanges();
                 }
             }
+        }
+
+        /// <summary>
+        /// Message Class
+        /// </summary>
+        public sealed class Message : BusStartedTransactionMessage
+        {
+            /// <summary>
+            /// Gets or sets the viewer person id.
+            /// </summary>
+            /// <value>
+            /// The viewer person id.
+            /// </value>
+            public int ViewerPersonAliasId { get; set; }
+
+            /// <summary>
+            /// Gets or sets the target person id.
+            /// </summary>
+            /// <value>
+            /// The target person id.
+            /// </value>
+            public int TargetPersonAliasId { get; set; }
+
+            /// <summary>
+            /// Gets or sets the IP address that requested the page.
+            /// </summary>
+            /// <value>
+            /// IP Address.
+            /// </value>
+            public string IPAddress { get; set; }
+
+            /// <summary>
+            /// Gets or sets the source of the view (site id or application name)
+            /// </summary>
+            /// <value>
+            /// Source.
+            /// </value>
+            public string Source { get; set; }
+
+            /// <summary>
+            /// Gets or sets the DateTime the person was viewed.
+            /// </summary>
+            /// <value>
+            /// Date Viewed.
+            /// </value>
+            public DateTime DateTimeViewed { get; set; }
         }
     }
 }

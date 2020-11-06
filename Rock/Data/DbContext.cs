@@ -541,10 +541,7 @@ namespace Rock.Data
             // model hooks, achievements need to be updated here. Also, it is not necessary for this logic to complete before this
             // transaction can continue processing and exit.
             var entitiesForAchievements = new List<IEntity>();
-            var achievementsProcessingTransaction = new AchievementsProcessingTransaction
-            {
-                SourceEntities = entitiesForAchievements
-            };
+            var isAchievementsEnabled = EntityTypeCache.Get<T>()?.IsAchievementsEnabled == true;
 
             // ensure CreatedDateTime and ModifiedDateTime is set
             var currentDateTime = RockDateTime.Now;
@@ -564,7 +561,10 @@ namespace Rock.Data
                         model.ModifiedByPersonAliasId = model.ModifiedByPersonAliasId ?? currentPersonAliasId;
                     }
 
-                    entitiesForAchievements.Add( model );
+                    if ( isAchievementsEnabled )
+                    {
+                        entitiesForAchievements.Add( model );
+                    }
                 }
             }
 
@@ -582,9 +582,14 @@ namespace Rock.Data
             EntityFramework.Utilities.Configuration.SqlBulkCopyOptions = System.Data.SqlClient.SqlBulkCopyOptions.CheckConstraints;
             EntityFramework.Utilities.EFBatchOperation.For( this, this.Set<T>() ).InsertAll( records );
 
-            if ( entitiesForAchievements.Any() )
+            // Send the achievements messages
+            foreach ( var entityForAchievement in entitiesForAchievements )
             {
-                achievementsProcessingTransaction.Send();
+                new AchievementsProcessingTransaction.Message
+                {
+                    EntityGuid = entityForAchievement.Guid,
+                    EntityTypeName = entityForAchievement.TypeName
+                }.Send();
             }
         }
 

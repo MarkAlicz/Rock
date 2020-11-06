@@ -79,13 +79,14 @@ namespace Rock.Web.UI
                 Person.PrimaryAlias != null &&
                 Person.PrimaryAlias.Id != CurrentPersonAlias.Id )
             {
-                var transaction = new PersonViewTransaction();
-                transaction.DateTimeViewed = RockDateTime.Now;
-                transaction.TargetPersonAliasId = Person.PrimaryAlias.Id;
-                transaction.ViewerPersonAliasId = CurrentPersonAlias.Id;
-                transaction.Source = RockPage.PageTitle;
-                transaction.IPAddress = Request.UserHostAddress;
-                RockQueue.TransactionQueue.Enqueue( transaction );
+                new PersonViewTransaction.Message
+                {
+                    DateTimeViewed = RockDateTime.Now,
+                    TargetPersonAliasId = Person.PrimaryAlias.Id,
+                    ViewerPersonAliasId = CurrentPersonAlias.Id,
+                    Source = RockPage.PageTitle,
+                    IPAddress = Request.UserHostAddress
+                }.Send();
 
                 Context.AddOrReplaceItem( "PersonViewed", "Handled" );
             }

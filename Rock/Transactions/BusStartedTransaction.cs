@@ -15,8 +15,6 @@
 // </copyright>
 //
 
-using System.Collections.Generic;
-using System.Linq;
 using Rock.Bus;
 using Rock.Bus.Consumer;
 using Rock.Bus.Message;
@@ -25,10 +23,32 @@ using Rock.Bus.Queue;
 namespace Rock.Transactions
 {
     /// <summary>
+    /// A bus started transaction message.
+    /// For carrying arguments needed to execute a transaction.
+    /// </summary>
+    public abstract class BusStartedTransactionMessage : ICommandMessage<StartTaskQueue>
+    {
+    }
+
+    /// <summary>
+    /// Extension methods
+    /// </summary>
+    public static class BusStartedTransactionMessageExtensions
+    {
+        /// <summary>
+        /// Sends the messages to the bus.
+        /// </summary>
+        public static void Send( this BusStartedTransactionMessage message )
+        {
+            _ = RockMessageBus.SendAsync( message, message.GetType() );
+        }
+    }
+
+    /// <summary>
     /// Bus Started Transaction
     /// </summary>
     public abstract class BusStartedTransaction<TMessage> : RockConsumer<StartTaskQueue, TMessage>
-        where TMessage : class, ICommandMessage<StartTaskQueue>
+        where TMessage : BusStartedTransactionMessage
     {
         /// <summary>
         /// Consumes the specified context.
@@ -40,33 +60,8 @@ namespace Rock.Transactions
         }
 
         /// <summary>
-        /// Generate messages from the instance properties that should be sent on the
-        /// message bus so that a Rock instance can execute the transactions.
-        /// </summary>
-        /// <returns></returns>
-        public abstract IEnumerable<TMessage> GetMessagesToSend();
-
-        /// <summary>
         /// Executes this instance.
         /// </summary>
         public abstract void Execute( TMessage message );
-
-        /// <summary>
-        /// Sends the messages.
-        /// </summary>
-        public void Send()
-        {
-            var messages = GetMessagesToSend();
-
-            if ( messages?.Any() != true )
-            {
-                return;
-            }
-
-            foreach ( var message in messages )
-            {
-                // _ = RockMessageBus.Send<StartTaskQueue, TMessage>( message );
-            }
-        }
     }
 }
