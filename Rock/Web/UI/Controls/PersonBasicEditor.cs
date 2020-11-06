@@ -58,7 +58,7 @@ namespace Rock.Web.UI.Controls
         private DefinedValuePicker _dvpPersonConnectionStatus;
         private RockRadioButtonList _rblPersonRole;
         private RockRadioButtonList _rblPersonGender;
-        private DatePicker _dpPersonBirthDate;
+        private BirthdayPicker _bdpPersonBirthDate;
         private GradePicker _ddlGradePicker;
         private DefinedValuePicker _dvpPersonMaritalStatus;
         private EmailBox _ebPersonEmail;
@@ -142,13 +142,13 @@ namespace Rock.Web.UI.Controls
             get
             {
                 EnsureChildControls();
-                return _dpPersonBirthDate.Visible;
+                return _bdpPersonBirthDate.Visible;
             }
 
             set
             {
                 EnsureChildControls();
-                _dpPersonBirthDate.Visible = value;
+                _bdpPersonBirthDate.Visible = value;
             }
         }
 
@@ -163,13 +163,13 @@ namespace Rock.Web.UI.Controls
             get
             {
                 EnsureChildControls();
-                return _dpPersonBirthDate.Required;
+                return _bdpPersonBirthDate.Required;
             }
 
             set
             {
                 EnsureChildControls();
-                _dpPersonBirthDate.Required = value;
+                _bdpPersonBirthDate.Required = value;
             }
         }
 
@@ -615,13 +615,13 @@ namespace Rock.Web.UI.Controls
             get
             {
                 EnsureChildControls();
-                return _dpPersonBirthDate.SelectedDate;
+                return _bdpPersonBirthDate.SelectedDate;
             }
 
             set
             {
                 EnsureChildControls();
-                _dpPersonBirthDate.SelectedDate = value;
+                _bdpPersonBirthDate.SelectedDate = value;
             }
         }
 
@@ -636,7 +636,7 @@ namespace Rock.Web.UI.Controls
             get
             {
                 EnsureChildControls();
-                return _dpPersonBirthDate.IsValid;
+                return _bdpPersonBirthDate.IsValid;
             }
         }
 
@@ -740,7 +740,7 @@ namespace Rock.Web.UI.Controls
             _dvpPersonConnectionStatus.Label = AddLabelPrefix( "Connection Status" );
             _rblPersonRole.Label = AddLabelPrefix( "Role" );
             _rblPersonGender.Label = AddLabelPrefix( "Gender" );
-            _dpPersonBirthDate.Label = AddLabelPrefix( "Birthdate" );
+            _bdpPersonBirthDate.Label = AddLabelPrefix( "Birthdate" );
             _ddlGradePicker.Label = AddLabelPrefix( "Grade" );
             _dvpPersonMaritalStatus.Label = AddLabelPrefix( "Marital Status" );
             _ebPersonEmail.Label = AddLabelPrefix( "Email" );
@@ -886,12 +886,10 @@ namespace Rock.Web.UI.Controls
                 ValidationGroup = ValidationGroup
             };
 
-            _dpPersonBirthDate = new DatePicker
+            _bdpPersonBirthDate = new BirthdayPicker
             {
-                ID = "dpPersonBirthDate",
+                ID = "bdpPersonBirthDate",
                 Label = "Birthdate",
-                AllowFutureDateSelection = false,
-                ForceParse = false,
                 ValidationGroup = ValidationGroup
             };
 
@@ -937,7 +935,7 @@ namespace Rock.Web.UI.Controls
             _dvpPersonSuffix.Parent?.Controls.Remove( _dvpPersonSuffix );
             _ebPersonEmail.Parent?.Controls.Remove( _ebPersonEmail );
             _pnbMobilePhoneNumber.Parent?.Controls.Remove( _pnbMobilePhoneNumber );
-            _dpPersonBirthDate.Parent?.Controls.Remove( _dpPersonBirthDate );
+            _bdpPersonBirthDate.Parent?.Controls.Remove( _bdpPersonBirthDate );
             _rblPersonGender.Parent?.Controls.Remove( _rblPersonGender );
             _rblPersonRole.Parent?.Controls.Remove( _rblPersonRole );
             _ddlGradePicker.Parent?.Controls.Remove( _ddlGradePicker );
@@ -956,7 +954,7 @@ namespace Rock.Web.UI.Controls
                 _pnlCol2.Controls.Add( _rblPersonRole );
                 _pnlCol2.Controls.Add( _rblPersonGender );
 
-                _pnlCol3.Controls.Add( _dpPersonBirthDate );
+                _pnlCol3.Controls.Add( _bdpPersonBirthDate );
                 _pnlCol3.Controls.Add( _ddlGradePicker );
                 _pnlCol3.Controls.Add( _dvpPersonMaritalStatus );
             }
@@ -968,7 +966,7 @@ namespace Rock.Web.UI.Controls
                 _phControls.Controls.Add( _dvpPersonSuffix );
                 _phControls.Controls.Add( _ebPersonEmail );
                 _phControls.Controls.Add( _pnbMobilePhoneNumber );
-                _phControls.Controls.Add( _dpPersonBirthDate );
+                _phControls.Controls.Add( _bdpPersonBirthDate );
                 _phControls.Controls.Add( _rblPersonGender );
                 _phControls.Controls.Add( _dvpPersonConnectionStatus );
                 _phControls.Controls.Add( _rblPersonRole );

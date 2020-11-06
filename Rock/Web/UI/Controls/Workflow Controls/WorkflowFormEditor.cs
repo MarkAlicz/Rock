@@ -579,6 +579,7 @@ namespace Rock.Web.UI.Controls
             {
                 ID = "_dvpPersonEntryConnectionStatus",
                 Label = "Connection Status",
+                Required = true,
                 DefinedTypeId = DefinedTypeCache.GetId( Rock.SystemGuid.DefinedType.PERSON_CONNECTION_STATUS.AsGuid() )
             };
 
@@ -586,6 +587,7 @@ namespace Rock.Web.UI.Controls
             {
                 ID = "_dvpPersonEntryRecordStatus",
                 Label = "Record Status",
+                Required = true,
                 DefinedTypeId = DefinedTypeCache.GetId( Rock.SystemGuid.DefinedType.PERSON_RECORD_STATUS.AsGuid() )
             };
 
@@ -593,6 +595,7 @@ namespace Rock.Web.UI.Controls
             {
                 ID = "_dvpPersonEntryGroupLocationType",
                 Label = "Address Type",
+                Required = true,
                 DefinedTypeId = DefinedTypeCache.GetId( Rock.SystemGuid.DefinedType.GROUP_LOCATION_TYPE.AsGuid() )
             };
 

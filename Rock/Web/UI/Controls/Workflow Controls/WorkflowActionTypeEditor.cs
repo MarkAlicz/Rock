@@ -252,13 +252,6 @@ $('.workflow-action > .panel-body').on('validation-error', function() {
                 if ( result.WorkflowForm == null )
                 {
                     result.WorkflowForm = CreateNewWorkflowForm();
-
-                    result.WorkflowForm.Actions = "Submit^^^Your information has been submitted successfully.";
-                    var systemEmail = new SystemCommunicationService( new RockContext() ).Get( SystemGuid.SystemCommunication.WORKFLOW_FORM_NOTIFICATION.AsGuid() );
-                    if ( systemEmail != null )
-                    {
-                        result.WorkflowForm.NotificationSystemCommunicationId = systemEmail.Id;
-                    }
                 }
             }
             else
@@ -278,19 +271,25 @@ $('.workflow-action > .panel-body').on('validation-error', function() {
         }
 
         /// <summary>
-        /// Creates the new workflow form and set defaults 
+        /// 
         /// </summary>
         /// <returns></returns>
         private static WorkflowActionForm CreateNewWorkflowForm()
         {
-            var workflowForm = new WorkflowActionForm();
+            var workflowActionForm = new WorkflowActionForm();
 
-            // WorkflowActionForm sets a few defaults with AutoProperties, but DefinedValue defaults need to be set manually
-            workflowForm.PersonEntryConnectionStatusValueId = DefinedValueCache.GetId( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_VISITOR.AsGuid() );
-            workflowForm.PersonEntryRecordStatusValueId = DefinedValueCache.GetId( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_PENDING.AsGuid() );
-            workflowForm.PersonEntryGroupLocationTypeValueId = DefinedValueCache.GetId( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_HOME.AsGuid() );
+            workflowActionForm.PersonEntryConnectionStatusValueId = DefinedValueCache.GetId( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_VISITOR.AsGuid() );
+            workflowActionForm.PersonEntryRecordStatusValueId = DefinedValueCache.GetId( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_PENDING.AsGuid() );
+            workflowActionForm.PersonEntryGroupLocationTypeValueId = DefinedValueCache.GetId( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_HOME.AsGuid() );
 
-            return workflowForm;
+            workflowActionForm.Actions = "Submit^^^Your information has been submitted successfully.";
+            var systemEmail = new SystemCommunicationService( new RockContext() ).Get( SystemGuid.SystemCommunication.WORKFLOW_FORM_NOTIFICATION.AsGuid() );
+            if ( systemEmail != null )
+            {
+                workflowActionForm.NotificationSystemCommunicationId = systemEmail.Id;
+            }
+
+            return workflowActionForm;
         }
 
         /// <summary>
@@ -330,12 +329,6 @@ $('.workflow-action > .panel-body').on('validation-error', function() {
                 if ( value.WorkflowForm == null )
                 {
                     value.WorkflowForm = CreateNewWorkflowForm();
-                    value.WorkflowForm.Actions = "Submit^^^Your information has been submitted successfully.";
-                    var systemEmail = new SystemCommunicationService( new RockContext() ).Get( SystemGuid.SystemCommunication.WORKFLOW_FORM_NOTIFICATION.AsGuid() );
-                    if ( systemEmail != null )
-                    {
-                        value.WorkflowForm.NotificationSystemCommunicationId = systemEmail.Id;
-                    }
                 }
                 _formEditor.SetForm( value.WorkflowForm, workflowTypeAttributes );
                 _cbIsActionCompletedOnSuccess.Checked = true;
