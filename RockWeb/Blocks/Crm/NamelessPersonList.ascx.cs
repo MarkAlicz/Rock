@@ -56,6 +56,7 @@ namespace RockWeb.Blocks.Crm
         protected override void OnInit( EventArgs e )
         {
             base.OnInit( e );
+            newPersonEditor.ShowEmail = false;
             gNamelessPersonList.GridRebind += gList_GridRebind;
             gNamelessPersonList.Actions.ShowMergeTemplate = false;
 
